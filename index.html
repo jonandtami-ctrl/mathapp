@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Math Practice</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="confetti-layer"></div>
+<div class="app">
+
+  <section id="home-screen" class="screen">
+    <h1>🧮 Math Practice</h1>
+    <p class="subtitle">Pick something to practice. Each set has 20 questions.</p>
+    <div class="menu">
+      <button class="menu-btn" data-mode="times">
+        <span class="menu-icon">🔢</span>
+        <span class="menu-label">Times Tables</span>
+        <span class="menu-sub">1 - 12</span>
+      </button>
+      <button class="menu-btn" data-mode="subtraction">
+        <span class="menu-icon">➖</span>
+        <span class="menu-label">Subtraction</span>
+      </button>
+      <button class="menu-btn" data-mode="division">
+        <span class="menu-icon">➗</span>
+        <span class="menu-label">Division</span>
+      </button>
+      <button class="menu-btn" data-mode="percentages">
+        <span class="menu-icon">💯</span>
+        <span class="menu-label">Percentages</span>
+      </button>
+      <button class="menu-btn menu-btn-wide" data-mode="mixed">
+        <span class="menu-icon">🎲</span>
+        <span class="menu-label">Mixed Bag</span>
+      </button>
+    </div>
+  </section>
+
+  <section id="quiz-screen" class="screen hidden">
+    <div class="progress-track">
+      <div id="progress-fill" class="progress-fill"></div>
+    </div>
+    <div class="quiz-header">
+      <span id="progress-label">Question 1/20</span>
+      <span id="streak-label" class="streak hidden">🔥 0</span>
+      <span id="score-label">Score: 0</span>
+    </div>
+    <div id="question-box" class="question-box">
+      <p id="question-text">?</p>
+      <form id="answer-form">
+        <input type="number" id="answer-input" inputmode="numeric" autocomplete="off" placeholder="Your answer">
+        <button type="submit" id="submit-btn">Check</button>
+      </form>
+      <p id="feedback-text" class="feedback hidden"></p>
+      <button id="next-btn" class="hidden">Next Question →</button>
+    </div>
+  </section>
+
+  <section id="results-screen" class="screen hidden">
+    <h1 id="results-title">Set Complete!</h1>
+    <div id="stars" class="stars">☆☆☆</div>
+    <p id="results-summary" class="results-summary"></p>
+    <p id="results-message" class="results-message"></p>
+    <div class="menu results-menu">
+      <button id="retry-btn">Try Again</button>
+      <button id="home-btn">Back to Menu</button>
+    </div>
+  </section>
+
+</div>
+<script src="script.js"></script>
+</body>
+</html>
