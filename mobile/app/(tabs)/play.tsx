@@ -8,6 +8,14 @@ import QuizFlow from '../../features/gameplay/QuizFlow';
 import ResultsSummary from '../../features/gameplay/ResultsSummary';
 import QuickPlay from '../../features/gameplay/QuickPlay';
 import QuickPlayResults from '../../features/gameplay/QuickPlayResults';
+import WorldMap from '../../features/adventure/WorldMap';
+import LevelMap from '../../features/adventure/LevelMap';
+import LevelSession from '../../features/adventure/LevelSession';
+import LevelResults from '../../features/adventure/LevelResults';
+import BossBattle from '../../features/adventure/BossBattle';
+import { getWorld } from '../../features/adventure/worlds';
+import type { SessionOutcome } from '../../features/gameplay/QuestionSession';
+import type { Stage, WorldId } from '../../features/adventure/types';
 import { useActiveProfile, type QuizResult } from '../../hooks/useActiveProfile';
 import { colors, gradients, radii, spacing, typography } from '../../constants/theme';
 import type { GameMode } from '../../types';
@@ -18,14 +26,21 @@ type PlayState =
   | 'quickplay-results'
   | 'classic-select'
   | 'classic-quiz'
-  | 'classic-results';
+  | 'classic-results'
+  | 'adventure-worldmap'
+  | 'adventure-levelmap'
+  | 'adventure-stage'
+  | 'adventure-results';
 
 export default function PlayTab() {
-  const { profile, loading, recordQuizResult } = useActiveProfile();
+  const { profile, loading, recordQuizResult, recordLevelResult } = useActiveProfile();
   const [state, setState] = useState<PlayState>('menu');
   const [classicMode, setClassicMode] = useState<GameMode | null>(null);
   const [classicScore, setClassicScore] = useState(0);
   const [quickPlayResult, setQuickPlayResult] = useState<QuizResult | null>(null);
+  const [selectedWorldId, setSelectedWorldId] = useState<WorldId | null>(null);
+  const [selectedStage, setSelectedStage] = useState<Stage | null>(null);
+  const [adventureOutcome, setAdventureOutcome] = useState<SessionOutcome | null>(null);
 
   if (loading || !profile) {
     return (
@@ -51,6 +66,33 @@ export default function PlayTab() {
     setState('quickplay-results');
   }
 
+  function openWorld(worldId: WorldId) {
+    setSelectedWorldId(worldId);
+    setState('adventure-levelmap');
+  }
+
+  function openStage(stage: Stage) {
+    setSelectedStage(stage);
+    setState('adventure-stage');
+  }
+
+  async function finishStage(outcome: SessionOutcome) {
+    if (!selectedWorldId || !selectedStage) return;
+    setAdventureOutcome(outcome);
+    await recordLevelResult({
+      worldId: selectedWorldId,
+      stageId: selectedStage.id,
+      category: selectedStage.category,
+      xpEarned: outcome.xpEarned,
+      coinsEarned: outcome.coinsEarned,
+      correctCount: outcome.correctCount,
+      totalCount: outcome.totalCount,
+    });
+    setState('adventure-results');
+  }
+
+  const world = selectedWorldId ? getWorld(selectedWorldId) : null;
+
   return (
     <ScreenContainer>
       {state === 'menu' && (
@@ -64,6 +106,14 @@ export default function PlayTab() {
               <Text style={styles.quickPlaySubtitle}>
                 10 mixed questions for Grade {profile.grade} — earn XP and coins!
               </Text>
+            </LinearGradient>
+          </TouchableOpacity>
+
+          <TouchableOpacity onPress={() => setState('adventure-worldmap')} activeOpacity={0.85}>
+            <LinearGradient colors={gradients.successButton} style={styles.quickPlayCard}>
+              <Text style={styles.quickPlayIcon}>🗺️</Text>
+              <Text style={styles.quickPlayTitle}>Adventure Mode</Text>
+              <Text style={styles.quickPlaySubtitle}>Explore 8 worlds, earn stars, defeat bosses!</Text>
             </LinearGradient>
           </TouchableOpacity>
 
@@ -90,6 +140,36 @@ export default function PlayTab() {
           mode={classicMode}
           onRetry={startClassic}
           onHome={() => setState('menu')}
+        />
+      )}
+
+      {state === 'adventure-worldmap' && (
+        <WorldMap progress={profile.adventureProgress} onSelectWorld={openWorld} />
+      )}
+
+      {state === 'adventure-levelmap' && world && (
+        <LevelMap
+          world={world}
+          progress={profile.adventureProgress}
+          onSelectStage={openStage}
+          onBack={() => setState('adventure-worldmap')}
+        />
+      )}
+
+      {state === 'adventure-stage' &&
+        selectedStage &&
+        (selectedStage.kind === 'level' ? (
+          <LevelSession stage={selectedStage} grade={profile.grade} onFinish={finishStage} />
+        ) : (
+          <BossBattle stage={selectedStage} grade={profile.grade} onFinish={finishStage} />
+        ))}
+
+      {state === 'adventure-results' && selectedStage && adventureOutcome && (
+        <LevelResults
+          stage={selectedStage}
+          outcome={adventureOutcome}
+          onRetry={() => setState('adventure-stage')}
+          onBackToLevels={() => setState('adventure-levelmap')}
         />
       )}
     </ScreenContainer>

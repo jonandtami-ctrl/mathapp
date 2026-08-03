@@ -41,6 +41,32 @@ export function generateQuestion(category: Category, grade: Grade, difficulty: D
   return generatorsByCategory[category](grade, difficulty);
 }
 
+// Generates `count` questions of a single category/difficulty, avoiding
+// exact-duplicate text within the set where possible. Used by Adventure
+// levels and boss battles.
+export function generateQuestionSet(
+  category: Category,
+  grade: Grade,
+  difficulty: Difficulty,
+  count: number,
+): EngineQuestion[] {
+  const set: EngineQuestion[] = [];
+  const seenTexts = new Set<string>();
+
+  for (let i = 0; i < count; i++) {
+    let question = generateQuestion(category, grade, difficulty);
+    let attempts = 0;
+    while (seenTexts.has(question.text) && attempts < 15) {
+      question = generateQuestion(category, grade, difficulty);
+      attempts += 1;
+    }
+    seenTexts.add(question.text);
+    set.push(question);
+  }
+
+  return set;
+}
+
 const QUICK_PLAY_LENGTH = 10;
 
 // Escalates difficulty across the session: easier questions first, harder later.

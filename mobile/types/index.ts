@@ -26,6 +26,16 @@ export type CategoryStat = {
   correct: number;
 };
 
+export type StarRating = 0 | 1 | 2 | 3;
+
+export type StageProgress = {
+  stars: StarRating;
+  bestAccuracy: number;
+};
+
+// Keyed by `${worldId}:${stageId}` - see features/adventure/progress.ts.
+export type AdventureProgress = Record<string, StageProgress>;
+
 export type ChildProfile = {
   id: string;
   nickname: string;
@@ -41,4 +51,7 @@ export type ChildProfile = {
   dailyStreak: number;
   lastPlayedDate: string | null; // ISO yyyy-mm-dd
   categoryStats: Partial<Record<Category, CategoryStat>>;
+
+  adventureProgress: AdventureProgress;
+  perfectRounds: number; // Quick Play / level sessions completed with 100% accuracy
 };

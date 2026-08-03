@@ -18,5 +18,7 @@ export const sampleProfiles: ChildProfile[] = [
     dailyStreak: 0,
     lastPlayedDate: null,
     categoryStats: {},
+    adventureProgress: {},
+    perfectRounds: 0,
   },
 ];
