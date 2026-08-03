@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { getActiveProfileId, getProfiles, saveProfiles, setActiveProfileId } from '../../services/storage';
+import { clearProfiles, getActiveProfileId, getProfiles, saveProfiles, setActiveProfileId } from '../../services/storage';
 import { computeStars } from '../adventure/progress';
 import type { AdventureProgress, Category, CategoryStat, ChildProfile, Grade } from '../../types';
 
@@ -28,6 +28,7 @@ type ProfileContextValue = {
   loading: boolean;
   needsOnboarding: boolean;
   completeOnboarding: (grade: Grade) => Promise<void>;
+  resetProfile: () => Promise<void>;
   switchProfile: (id: string) => Promise<void>;
   updateGrade: (grade: Grade) => Promise<void>;
   recordQuizResult: (result: QuizResult) => Promise<void>;
@@ -114,6 +115,12 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
     setActiveId(profile.id);
   }
 
+  async function resetProfile() {
+    await clearProfiles();
+    setProfiles([]);
+    setActiveId(null);
+  }
+
   async function switchProfile(id: string) {
     await setActiveProfileId(id);
     setActiveId(id);
@@ -194,6 +201,7 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
         loading,
         needsOnboarding,
         completeOnboarding,
+        resetProfile,
         switchProfile,
         updateGrade,
         recordQuizResult,

@@ -22,3 +22,7 @@ export async function getActiveProfileId(): Promise<string | null> {
 export async function setActiveProfileId(id: string): Promise<void> {
   await AsyncStorage.setItem(KEYS.activeProfileId, id);
 }
+
+export async function clearProfiles(): Promise<void> {
+  await AsyncStorage.multiRemove([KEYS.profiles, KEYS.activeProfileId]);
+}

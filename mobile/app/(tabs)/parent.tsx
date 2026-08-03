@@ -1,8 +1,9 @@
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import ScreenContainer from '../../components/ScreenContainer';
 import LoadingState from '../../components/LoadingState';
 import EmptyState from '../../components/EmptyState';
+import Button from '../../components/Button';
 import { useProfile } from '../../features/profile/ProfileContext';
 import { colors, radii, spacing, typography } from '../../constants/theme';
 import type { Grade } from '../../types';
@@ -10,7 +11,18 @@ import type { Grade } from '../../types';
 const GRADES: Grade[] = [1, 2, 3, 4, 5, 6, 7, 8];
 
 export default function ParentTab() {
-  const { profile, loading, updateGrade } = useProfile();
+  const { profile, loading, updateGrade, resetProfile } = useProfile();
+
+  function confirmReset() {
+    Alert.alert(
+      'Reset Profile?',
+      'This deletes all progress, XP, coins, and Adventure Mode stars, and takes you back to the grade-choice screen. This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Reset', style: 'destructive', onPress: resetProfile },
+      ],
+    );
+  }
 
   if (loading || !profile) {
     return (
@@ -48,6 +60,14 @@ export default function ParentTab() {
         title="Full parent dashboard is coming soon"
         message="PIN protection, progress reports, goals, and subscription management arrive in Phase 5, after accounts (Phase 4) exist."
       />
+
+      <View style={styles.divider} />
+
+      <Text style={styles.sectionTitle}>Reset</Text>
+      <Text style={styles.sectionSubtitle}>
+        Deletes all progress and starts over from the grade-choice screen. Useful for testing.
+      </Text>
+      <Button label="Reset Profile" gradientColors={['#e2504a', '#b6221e']} onPress={confirmReset} />
     </ScreenContainer>
   );
 }
