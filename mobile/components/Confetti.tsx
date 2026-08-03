@@ -4,18 +4,32 @@ import { Animated, Dimensions, StyleSheet, View } from 'react-native';
 const EMOJI = ['🎉', '⭐', '✨', '🎊', '💫'];
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
-function randomInt(min, max) {
+function randomInt(min: number, max: number) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-export default function Confetti({ burstId }) {
-  const [pieces, setPieces] = useState([]);
+type ConfettiPiece = {
+  id: string;
+  anim: Animated.Value;
+  left: number;
+  emoji: string;
+  duration: number;
+  size: number;
+  spin: number;
+};
+
+type ConfettiProps = {
+  burstId: number;
+};
+
+export default function Confetti({ burstId }: ConfettiProps) {
+  const [pieces, setPieces] = useState<ConfettiPiece[]>([]);
 
   useEffect(() => {
     if (!burstId) return undefined;
 
     const count = 18;
-    const newPieces = Array.from({ length: count }).map((_, i) => ({
+    const newPieces: ConfettiPiece[] = Array.from({ length: count }).map((_, i) => ({
       id: `${burstId}-${i}`,
       anim: new Animated.Value(0),
       left: Math.random() * (SCREEN_WIDTH - 30),

@@ -1,12 +1,20 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Keyboard, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { generateQuestions, QUESTIONS_PER_SET } from '../questions';
-import { getModeTheme } from '../theme';
-import Confetti from '../components/Confetti';
+import { generateQuestions, QUESTIONS_PER_SET } from './questions';
+import { getModeMeta } from './modes';
+import Confetti from '../../components/Confetti';
+import ProgressBar from '../../components/ProgressBar';
+import { colors, radii, spacing, typography } from '../../constants/theme';
+import type { GameMode } from '../../types';
 
-export default function QuizScreen({ mode, onFinish }) {
-  const theme = getModeTheme(mode);
+type QuizFlowProps = {
+  mode: GameMode;
+  onFinish: (score: number) => void;
+};
+
+export default function QuizFlow({ mode, onFinish }: QuizFlowProps) {
+  const theme = getModeMeta(mode);
   const questions = useMemo(() => generateQuestions(mode), [mode]);
 
   const [index, setIndex] = useState(0);
@@ -14,23 +22,13 @@ export default function QuizScreen({ mode, onFinish }) {
   const [streak, setStreak] = useState(0);
   const [answerText, setAnswerText] = useState('');
   const [answered, setAnswered] = useState(false);
-  const [isCorrect, setIsCorrect] = useState(null);
+  const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   const [burstId, setBurstId] = useState(0);
 
   const shakeAnim = useRef(new Animated.Value(0)).current;
-  const progressAnim = useRef(new Animated.Value(0)).current;
   const streakScale = useRef(new Animated.Value(1)).current;
-  const inputRef = useRef(null);
 
   const question = questions[index];
-
-  useEffect(() => {
-    Animated.timing(progressAnim, {
-      toValue: (index + 1) / QUESTIONS_PER_SET,
-      duration: 300,
-      useNativeDriver: false,
-    }).start();
-  }, [index]);
 
   function triggerShake() {
     shakeAnim.setValue(0);
@@ -88,25 +86,18 @@ export default function QuizScreen({ mode, onFinish }) {
     outputRange: [-8, 0, 8],
   });
 
-  const progressWidth = progressAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['5%', '100%'],
-  });
-
   return (
     <View>
       <Confetti burstId={burstId} />
 
-      <View style={styles.progressTrack}>
-        <Animated.View style={[styles.progressFill, { width: progressWidth }]} />
-      </View>
+      <ProgressBar progress={(index + 1) / QUESTIONS_PER_SET} />
 
       <View style={styles.header}>
-        <Text style={styles.headerText}>Question {index + 1}/{QUESTIONS_PER_SET}</Text>
+        <Text style={styles.headerText}>
+          Question {index + 1}/{QUESTIONS_PER_SET}
+        </Text>
         {streak >= 2 ? (
-          <Animated.Text style={[styles.streak, { transform: [{ scale: streakScale }] }]}>
-            🔥 {streak}
-          </Animated.Text>
+          <Animated.Text style={[styles.streak, { transform: [{ scale: streakScale }] }]}>🔥 {streak}</Animated.Text>
         ) : (
           <View />
         )}
@@ -118,7 +109,6 @@ export default function QuizScreen({ mode, onFinish }) {
 
         <View style={styles.inputRow}>
           <TextInput
-            ref={inputRef}
             style={styles.input}
             keyboardType="number-pad"
             returnKeyType="done"
@@ -158,27 +148,16 @@ export default function QuizScreen({ mode, onFinish }) {
 }
 
 const styles = StyleSheet.create({
-  progressTrack: {
-    height: 10,
-    backgroundColor: '#eee',
-    borderRadius: 999,
-    overflow: 'hidden',
-    marginBottom: 18,
-  },
-  progressFill: {
-    height: '100%',
-    borderRadius: 999,
-    backgroundColor: '#6d5bd0',
-  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 20,
+    marginTop: spacing.lg,
+    marginBottom: spacing.xl,
   },
   headerText: {
     fontWeight: 'bold',
-    color: '#35317a',
+    color: colors.textHeading,
     fontSize: 15,
   },
   streak: {
@@ -192,46 +171,46 @@ const styles = StyleSheet.create({
   questionText: {
     fontSize: 30,
     fontWeight: 'bold',
-    color: '#1f2430',
-    marginVertical: 24,
+    color: colors.textBody,
+    marginVertical: spacing.xxl,
   },
   inputRow: {
     flexDirection: 'row',
-    gap: 10,
+    gap: spacing.md,
     width: '100%',
   },
   input: {
     flex: 1,
     fontSize: 20,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
     borderWidth: 2,
     borderColor: '#ddd',
-    borderRadius: 12,
+    borderRadius: radii.md,
     textAlign: 'center',
   },
   submitBtn: {
-    paddingVertical: 14,
-    paddingHorizontal: 22,
-    borderRadius: 12,
+    paddingVertical: spacing.lg - 2,
+    paddingHorizontal: spacing.xl + 2,
+    borderRadius: radii.md,
     justifyContent: 'center',
   },
   submitBtnText: {
-    color: '#fff',
+    color: colors.surface,
     fontWeight: 'bold',
-    fontSize: 16,
+    fontSize: typography.bodyBold.fontSize,
   },
   feedback: {
-    marginTop: 20,
-    padding: 14,
-    borderRadius: 12,
+    marginTop: spacing.xl,
+    padding: spacing.lg,
+    borderRadius: radii.md,
     width: '100%',
   },
   feedbackCorrect: {
-    backgroundColor: '#e3f8e8',
+    backgroundColor: colors.successBg,
   },
   feedbackWrong: {
-    backgroundColor: '#fbe6e5',
+    backgroundColor: colors.errorBg,
   },
   feedbackText: {
     fontSize: 17,
@@ -239,21 +218,21 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   feedbackTextCorrect: {
-    color: '#1a7a34',
+    color: colors.success,
   },
   feedbackTextWrong: {
-    color: '#b6221e',
+    color: colors.error,
   },
   nextBtn: {
-    marginTop: 18,
+    marginTop: spacing.xl,
     width: '100%',
-    paddingVertical: 16,
-    borderRadius: 12,
+    paddingVertical: spacing.lg,
+    borderRadius: radii.md,
     alignItems: 'center',
   },
   nextBtnText: {
-    color: '#fff',
+    color: colors.surface,
     fontWeight: 'bold',
-    fontSize: 16,
+    fontSize: typography.bodyBold.fontSize,
   },
 });

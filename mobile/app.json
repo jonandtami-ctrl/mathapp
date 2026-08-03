@@ -1,11 +1,17 @@
 {
   "expo": {
-    "name": "Math Practice",
-    "slug": "math-practice",
+    "name": "Epic Math",
+    "slug": "epic-math",
+    "scheme": "epicmath",
     "version": "1.0.0",
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "plugins": ["expo-router"],
+    "experiments": {
+      "typedRoutes": true
+    },
     "ios": {
       "supportsTablet": true
     },

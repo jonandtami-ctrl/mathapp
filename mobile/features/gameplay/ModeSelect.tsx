@@ -1,9 +1,15 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { MODES } from '../theme';
+import { colors, radii, shadow, spacing, typography } from '../../constants/theme';
+import { MODES } from './modes';
+import type { GameMode } from '../../types';
 
-export default function HomeScreen({ onSelectMode }) {
+type ModeSelectProps = {
+  onSelectMode: (mode: GameMode) => void;
+};
+
+export default function ModeSelect({ onSelectMode }: ModeSelectProps) {
   return (
     <View>
       <Text style={styles.title}>🧮 Math Practice</Text>
@@ -30,17 +36,17 @@ export default function HomeScreen({ onSelectMode }) {
 
 const styles = StyleSheet.create({
   title: {
-    fontSize: 30,
-    fontWeight: 'bold',
-    color: '#35317a',
+    fontSize: typography.heading1.fontSize,
+    fontWeight: typography.heading1.fontWeight,
+    color: colors.textHeading,
     textAlign: 'center',
-    marginBottom: 8,
+    marginBottom: spacing.sm,
   },
   subtitle: {
     textAlign: 'center',
-    color: '#555',
-    marginBottom: 24,
-    fontSize: 15,
+    color: colors.textMuted,
+    marginBottom: spacing.xxl,
+    fontSize: typography.body.fontSize,
   },
   menu: {
     flexDirection: 'row',
@@ -49,30 +55,26 @@ const styles = StyleSheet.create({
   },
   slot: {
     width: '48%',
-    marginBottom: 14,
+    marginBottom: spacing.lg,
   },
   wideSlot: {
     width: '100%',
-    marginBottom: 14,
+    marginBottom: spacing.lg,
   },
   card: {
-    borderRadius: 18,
-    paddingVertical: 24,
+    borderRadius: radii.lg,
+    paddingVertical: spacing.xxl,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.25,
-    shadowRadius: 10,
-    elevation: 6,
+    ...shadow.card,
   },
   icon: {
     fontSize: 32,
-    marginBottom: 6,
+    marginBottom: spacing.xs,
   },
   label: {
-    color: '#fff',
-    fontWeight: 'bold',
+    color: colors.surface,
+    fontWeight: '700',
     fontSize: 17,
     textAlign: 'center',
   },
