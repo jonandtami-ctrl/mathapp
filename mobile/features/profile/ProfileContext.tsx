@@ -1,8 +1,7 @@
-import { useEffect, useState } from 'react';
-import { getActiveProfileId, getProfiles, saveProfiles, setActiveProfileId } from '../services/storage';
-import { sampleProfiles } from '../features/profile/sampleProfiles';
-import { computeStars } from '../features/adventure/progress';
-import type { AdventureProgress, Category, CategoryStat, ChildProfile } from '../types';
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { getActiveProfileId, getProfiles, saveProfiles, setActiveProfileId } from '../../services/storage';
+import { computeStars } from '../adventure/progress';
+import type { AdventureProgress, Category, CategoryStat, ChildProfile, Grade } from '../../types';
 
 export type QuizResult = {
   xpEarned: number;
@@ -23,14 +22,19 @@ export type LevelResult = {
   totalCount: number;
 };
 
-type UseActiveProfileResult = {
+type ProfileContextValue = {
   profile: ChildProfile | null;
   profiles: ChildProfile[];
   loading: boolean;
+  needsOnboarding: boolean;
+  completeOnboarding: (grade: Grade) => Promise<void>;
   switchProfile: (id: string) => Promise<void>;
+  updateGrade: (grade: Grade) => Promise<void>;
   recordQuizResult: (result: QuizResult) => Promise<void>;
   recordLevelResult: (result: LevelResult) => Promise<void>;
 };
+
+const ProfileContext = createContext<ProfileContextValue | null>(null);
 
 function todayIso(): string {
   return new Date().toISOString().slice(0, 10);
@@ -60,34 +64,65 @@ function mergeCategoryStats(
   return merged;
 }
 
-export function useActiveProfile(): UseActiveProfileResult {
+function makeProfile(grade: Grade): ChildProfile {
+  return {
+    id: `profile-${Date.now()}`,
+    nickname: 'Explorer',
+    grade,
+    avatar: '🦊',
+    xp: 0,
+    coins: 0,
+    createdAt: new Date().toISOString(),
+    questionsAttempted: 0,
+    correctAnswers: 0,
+    highestAnswerStreak: 0,
+    dailyStreak: 0,
+    lastPlayedDate: null,
+    categoryStats: {},
+    adventureProgress: {},
+    perfectRounds: 0,
+  };
+}
+
+export function ProfileProvider({ children }: { children: React.ReactNode }) {
   const [profiles, setProfiles] = useState<ChildProfile[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     (async () => {
-      let stored = await getProfiles();
-      if (stored.length === 0) {
-        stored = sampleProfiles;
-        await saveProfiles(stored);
+      const stored = await getProfiles();
+      if (stored.length > 0) {
+        const id = (await getActiveProfileId()) ?? stored[0].id;
+        if (!stored.some((p) => p.id === id)) {
+          await setActiveProfileId(stored[0].id);
+          setActiveId(stored[0].id);
+        } else {
+          setActiveId(id);
+        }
+        setProfiles(stored);
       }
-
-      let id = await getActiveProfileId();
-      if (!id || !stored.some((p) => p.id === id)) {
-        id = stored[0].id;
-        await setActiveProfileId(id);
-      }
-
-      setProfiles(stored);
-      setActiveId(id);
       setLoading(false);
     })();
   }, []);
 
+  async function completeOnboarding(grade: Grade) {
+    const profile = makeProfile(grade);
+    await saveProfiles([profile]);
+    await setActiveProfileId(profile.id);
+    setProfiles([profile]);
+    setActiveId(profile.id);
+  }
+
   async function switchProfile(id: string) {
     await setActiveProfileId(id);
     setActiveId(id);
+  }
+
+  async function updateGrade(grade: Grade) {
+    const updated = profiles.map((p) => (p.id === activeId ? { ...p, grade } : p));
+    setProfiles(updated);
+    await saveProfiles(updated);
   }
 
   async function recordQuizResult(result: QuizResult) {
@@ -149,6 +184,29 @@ export function useActiveProfile(): UseActiveProfileResult {
   }
 
   const profile = profiles.find((p) => p.id === activeId) ?? null;
+  const needsOnboarding = !loading && profiles.length === 0;
 
-  return { profile, profiles, loading, switchProfile, recordQuizResult, recordLevelResult };
+  return (
+    <ProfileContext.Provider
+      value={{
+        profile,
+        profiles,
+        loading,
+        needsOnboarding,
+        completeOnboarding,
+        switchProfile,
+        updateGrade,
+        recordQuizResult,
+        recordLevelResult,
+      }}
+    >
+      {children}
+    </ProfileContext.Provider>
+  );
+}
+
+export function useProfile(): ProfileContextValue {
+  const ctx = useContext(ProfileContext);
+  if (!ctx) throw new Error('useProfile must be used within a ProfileProvider');
+  return ctx;
 }

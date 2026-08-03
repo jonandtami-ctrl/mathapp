@@ -2,12 +2,12 @@ import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import ScreenContainer from '../../components/ScreenContainer';
 import LoadingState from '../../components/LoadingState';
-import { useActiveProfile } from '../../hooks/useActiveProfile';
+import { useProfile } from '../../features/profile/ProfileContext';
 import { ACHIEVEMENTS } from '../../features/achievements';
 import { colors, radii, spacing, typography } from '../../constants/theme';
 
 export default function RewardsTab() {
-  const { profile, loading } = useActiveProfile();
+  const { profile, loading } = useProfile();
 
   if (loading || !profile) {
     return (

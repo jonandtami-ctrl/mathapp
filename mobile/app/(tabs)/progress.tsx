@@ -4,12 +4,12 @@ import ScreenContainer from '../../components/ScreenContainer';
 import LoadingState from '../../components/LoadingState';
 import EmptyState from '../../components/EmptyState';
 import ProgressBar from '../../components/ProgressBar';
-import { useActiveProfile } from '../../hooks/useActiveProfile';
+import { useProfile } from '../../features/profile/ProfileContext';
 import { CATEGORY_META } from '../../features/questions';
 import { colors, spacing, typography } from '../../constants/theme';
 
 export default function ProgressTab() {
-  const { profile, loading } = useActiveProfile();
+  const { profile, loading } = useProfile();
 
   if (loading || !profile) {
     return (

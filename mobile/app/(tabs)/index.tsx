@@ -5,12 +5,12 @@ import ScreenContainer from '../../components/ScreenContainer';
 import Button from '../../components/Button';
 import LoadingState from '../../components/LoadingState';
 import ProgressBar from '../../components/ProgressBar';
-import { useActiveProfile } from '../../hooks/useActiveProfile';
+import { useProfile } from '../../features/profile/ProfileContext';
 import { getLevelInfo } from '../../constants/leveling';
 import { colors, spacing, typography } from '../../constants/theme';
 
 export default function HomeTab() {
-  const { profile, loading } = useActiveProfile();
+  const { profile, loading } = useProfile();
   const router = useRouter();
 
   if (loading || !profile) {

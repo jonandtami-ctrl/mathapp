@@ -3,7 +3,7 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Confetti from '../../components/Confetti';
 import { colors, gradients, radii, spacing, typography } from '../../constants/theme';
-import type { QuizResult } from '../../hooks/useActiveProfile';
+import type { QuizResult } from '../profile/ProfileContext';
 
 type QuickPlayResultsProps = {
   result: QuizResult;

@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import QuestionSession from './QuestionSession';
 import { generateQuickPlaySet } from '../questions';
 import type { Grade } from '../../types';
-import type { QuizResult } from '../../hooks/useActiveProfile';
+import type { QuizResult } from '../profile/ProfileContext';
 
 type QuickPlayProps = {
   grade: Grade;

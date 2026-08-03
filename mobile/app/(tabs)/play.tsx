@@ -16,7 +16,7 @@ import BossBattle from '../../features/adventure/BossBattle';
 import { getWorld } from '../../features/adventure/worlds';
 import type { SessionOutcome } from '../../features/gameplay/QuestionSession';
 import type { Stage, WorldId } from '../../features/adventure/types';
-import { useActiveProfile, type QuizResult } from '../../hooks/useActiveProfile';
+import { useProfile, type QuizResult } from '../../features/profile/ProfileContext';
 import { colors, gradients, radii, spacing, typography } from '../../constants/theme';
 import type { GameMode } from '../../types';
 
@@ -33,7 +33,7 @@ type PlayState =
   | 'adventure-results';
 
 export default function PlayTab() {
-  const { profile, loading, recordQuizResult, recordLevelResult } = useActiveProfile();
+  const { profile, loading, recordQuizResult, recordLevelResult } = useProfile();
   const [state, setState] = useState<PlayState>('menu');
   const [classicMode, setClassicMode] = useState<GameMode | null>(null);
   const [classicScore, setClassicScore] = useState(0);
