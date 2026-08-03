@@ -8,7 +8,23 @@ export type NumericQuestion = {
 
 export type Question = NumericQuestion;
 
-export type Grade = 3 | 4 | 5 | 6;
+export type Grade = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
+
+export type Category =
+  | 'addition'
+  | 'subtraction'
+  | 'multiplication'
+  | 'division'
+  | 'fractions'
+  | 'decimals'
+  | 'orderOfOperations'
+  | 'geometry'
+  | 'wordProblems';
+
+export type CategoryStat = {
+  attempted: number;
+  correct: number;
+};
 
 export type ChildProfile = {
   id: string;
@@ -18,4 +34,11 @@ export type ChildProfile = {
   xp: number;
   coins: number;
   createdAt: string;
+
+  questionsAttempted: number;
+  correctAnswers: number;
+  highestAnswerStreak: number;
+  dailyStreak: number;
+  lastPlayedDate: string | null; // ISO yyyy-mm-dd
+  categoryStats: Partial<Record<Category, CategoryStat>>;
 };

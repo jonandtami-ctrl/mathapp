@@ -11,5 +11,12 @@ export const sampleProfiles: ChildProfile[] = [
     xp: 0,
     coins: 0,
     createdAt: new Date().toISOString(),
+
+    questionsAttempted: 0,
+    correctAnswers: 0,
+    highestAnswerStreak: 0,
+    dailyStreak: 0,
+    lastPlayedDate: null,
+    categoryStats: {},
   },
 ];

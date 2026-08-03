@@ -1,15 +1,52 @@
 import { useEffect, useState } from 'react';
 import { getActiveProfileId, getProfiles, saveProfiles, setActiveProfileId } from '../services/storage';
 import { sampleProfiles } from '../features/profile/sampleProfiles';
-import type { ChildProfile } from '../types';
+import type { Category, CategoryStat, ChildProfile } from '../types';
+
+export type QuizResult = {
+  xpEarned: number;
+  coinsEarned: number;
+  correctCount: number;
+  totalCount: number;
+  sessionHighestStreak: number;
+  categoryBreakdown: Partial<Record<Category, CategoryStat>>;
+};
 
 type UseActiveProfileResult = {
   profile: ChildProfile | null;
   profiles: ChildProfile[];
   loading: boolean;
   switchProfile: (id: string) => Promise<void>;
-  addXpAndCoins: (xp: number, coins: number) => Promise<void>;
+  recordQuizResult: (result: QuizResult) => Promise<void>;
 };
+
+function todayIso(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function nextDailyStreak(profile: ChildProfile): { dailyStreak: number; lastPlayedDate: string } {
+  const today = todayIso();
+  if (profile.lastPlayedDate === today) {
+    return { dailyStreak: profile.dailyStreak, lastPlayedDate: today };
+  }
+
+  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+  const continuesStreak = profile.lastPlayedDate === yesterday;
+  return { dailyStreak: continuesStreak ? profile.dailyStreak + 1 : 1, lastPlayedDate: today };
+}
+
+function mergeCategoryStats(
+  existing: Partial<Record<Category, CategoryStat>>,
+  incoming: Partial<Record<Category, CategoryStat>>,
+): Partial<Record<Category, CategoryStat>> {
+  const merged = { ...existing };
+  for (const key of Object.keys(incoming) as Category[]) {
+    const prev = merged[key] ?? { attempted: 0, correct: 0 };
+    const add = incoming[key]!;
+    merged[key] = { attempted: prev.attempted + add.attempted, correct: prev.correct + add.correct };
+  }
+  return merged;
+}
 
 export function useActiveProfile(): UseActiveProfileResult {
   const [profiles, setProfiles] = useState<ChildProfile[]>([]);
@@ -41,13 +78,27 @@ export function useActiveProfile(): UseActiveProfileResult {
     setActiveId(id);
   }
 
-  async function addXpAndCoins(xp: number, coins: number) {
-    const updated = profiles.map((p) => (p.id === activeId ? { ...p, xp: p.xp + xp, coins: p.coins + coins } : p));
+  async function recordQuizResult(result: QuizResult) {
+    const updated = profiles.map((p) => {
+      if (p.id !== activeId) return p;
+      const { dailyStreak, lastPlayedDate } = nextDailyStreak(p);
+      return {
+        ...p,
+        xp: p.xp + result.xpEarned,
+        coins: p.coins + result.coinsEarned,
+        questionsAttempted: p.questionsAttempted + result.totalCount,
+        correctAnswers: p.correctAnswers + result.correctCount,
+        highestAnswerStreak: Math.max(p.highestAnswerStreak, result.sessionHighestStreak),
+        dailyStreak,
+        lastPlayedDate,
+        categoryStats: mergeCategoryStats(p.categoryStats, result.categoryBreakdown),
+      };
+    });
     setProfiles(updated);
     await saveProfiles(updated);
   }
 
   const profile = profiles.find((p) => p.id === activeId) ?? null;
 
-  return { profile, profiles, loading, switchProfile, addXpAndCoins };
+  return { profile, profiles, loading, switchProfile, recordQuizResult };
 }
