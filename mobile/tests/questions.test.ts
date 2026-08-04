@@ -1,4 +1,5 @@
 import { CATEGORY_META, generateQuestion, generateQuickPlaySet } from '../features/questions';
+import type { EngineQuestion } from '../features/questions';
 import type { Difficulty } from '../features/questions/types';
 import type { Grade } from '../types';
 
@@ -19,11 +20,35 @@ function simplify(n: number, d: number): string {
   return sd === 1 ? String(sn) : `${sn}/${sd}`;
 }
 
-// Independent left-to-right, ×-before-+/- evaluator, reimplemented separately
-// from the generator so this test can't just be validating itself.
+// Negative operands are rendered as "(-8)"; strip the parens before parsing.
+function parseSignedToken(token: string): number {
+  const trimmed = token.trim();
+  if (trimmed.startsWith('(') && trimmed.endsWith(')')) {
+    return Number(trimmed.slice(1, -1));
+  }
+  return Number(trimmed);
+}
+
+function parseSignedPair(text: string, separator: string): [number, number] {
+  const [a, b] = text.replace(' = ?', '').split(separator);
+  return [parseSignedToken(a), parseSignedToken(b)];
+}
+
+// Independent left-to-right, ×-before-+/- evaluator with single-group
+// parentheses support, reimplemented separately from the generator so this
+// test can't just be validating itself against itself.
 function evaluateExpression(text: string): number {
   const expr = text.replace(' = ?', '');
-  const tokens = expr.split(' ');
+
+  const parenMatch = expr.match(/\(([^()]+)\)/);
+  let working = expr;
+  if (parenMatch) {
+    const [gA, gOp, gB] = parenMatch[1].split(' ');
+    const groupValue = gOp === '+' ? Number(gA) + Number(gB) : Number(gA) - Number(gB);
+    working = expr.replace(parenMatch[0], String(groupValue));
+  }
+
+  const tokens = working.split(' ');
   const values: number[] = [Number(tokens[0])];
   const ops: string[] = [];
   for (let i = 1; i < tokens.length; i += 2) {
@@ -43,6 +68,36 @@ function evaluateExpression(text: string): number {
     result = ops[i] === '+' ? result + values[i + 1] : result - values[i + 1];
   }
   return result;
+}
+
+function checkGeometryQuestion(q: EngineQuestion) {
+  const rectMatch = q.text.match(/A rectangle is (\d+) units wide and (\d+) units tall\. What is its (perimeter|area)\?/);
+  if (rectMatch) {
+    const [, w, h, kind] = rectMatch;
+    const width = Number(w);
+    const height = Number(h);
+    const expected = kind === 'perimeter' ? 2 * (width + height) : width * height;
+    expect(Number(q.answer)).toBe(expected);
+    return;
+  }
+
+  const triMatch = q.text.match(/A triangle has a base of (\d+) units and a height of (\d+) units\. What is its area\?/);
+  if (triMatch) {
+    const [, b, h] = triMatch;
+    expect(Number(q.answer)).toBe((Number(b) * Number(h)) / 2);
+    return;
+  }
+
+  const circMatch = q.text.match(/A circle has a radius of (\d+) units\. What is its (circumference|area)\?/);
+  if (circMatch) {
+    const [, r, kind] = circMatch;
+    const radius = Number(r);
+    const expected = kind === 'circumference' ? 2 * 3.14 * radius : 3.14 * radius * radius;
+    expect(Number(q.answer)).toBeCloseTo(Number(expected.toFixed(2)), 2);
+    return;
+  }
+
+  throw new Error(`Unrecognized geometry question text: "${q.text}"`);
 }
 
 describe('question engine: structural validity', () => {
@@ -80,55 +135,62 @@ describe('question engine: structural validity', () => {
 });
 
 describe('question engine: mathematical correctness', () => {
-  it('addition: a + b = answer, and matches the displayed operands', () => {
+  it('addition: a + b = answer (integers allowed grade 7-8)', () => {
     for (const grade of GRADES) {
       for (const difficulty of DIFFICULTIES) {
         const q = generateQuestion('addition', grade, difficulty);
-        const [a, b] = q.text.replace(' = ?', '').split(' + ').map(Number);
+        const [a, b] = parseSignedPair(q.text, ' + ');
         expect(a + b).toBe(Number(q.answer));
       }
     }
   });
 
-  it('subtraction: a - b = answer, and result is non-negative', () => {
+  it('subtraction: a - b = answer; non-negative below grade 7', () => {
     for (const grade of GRADES) {
       for (const difficulty of DIFFICULTIES) {
         const q = generateQuestion('subtraction', grade, difficulty);
-        const [a, b] = q.text.replace(' = ?', '').split(' - ').map(Number);
+        const [a, b] = parseSignedPair(q.text, ' - ');
         expect(a - b).toBe(Number(q.answer));
-        expect(Number(q.answer)).toBeGreaterThanOrEqual(0);
+        if (grade < 7 || difficulty === 1) {
+          expect(Number(q.answer)).toBeGreaterThanOrEqual(0);
+        }
       }
     }
   });
 
-  it('multiplication: a × b = answer', () => {
+  it('multiplication: a × b = answer (integers allowed grade 7-8)', () => {
     for (const grade of GRADES) {
       for (const difficulty of DIFFICULTIES) {
         const q = generateQuestion('multiplication', grade, difficulty);
-        const [a, b] = q.text.replace(' = ?', '').split(' × ').map(Number);
+        const [a, b] = parseSignedPair(q.text, ' × ');
         expect(a * b).toBe(Number(q.answer));
       }
     }
   });
 
-  it('division: divisor × answer = dividend, no remainder', () => {
+  it('division: divisor × answer = dividend (integers allowed grade 7-8)', () => {
     for (const grade of GRADES) {
       for (const difficulty of DIFFICULTIES) {
         const q = generateQuestion('division', grade, difficulty);
-        const [dividend, divisor] = q.text.replace(' = ?', '').split(' ÷ ').map(Number);
+        const [dividend, divisor] = parseSignedPair(q.text, ' ÷ ');
         expect(divisor * Number(q.answer)).toBe(dividend);
       }
     }
   });
 
-  it('decimals: a op b = answer within floating-point tolerance', () => {
+  it('decimals: add/subtract/multiply all check out within floating-point tolerance', () => {
     for (const grade of GRADES) {
       for (const difficulty of DIFFICULTIES) {
         const q = generateQuestion('decimals', grade, difficulty);
-        const isAddition = q.text.includes(' + ');
-        const [a, b] = q.text.replace(' = ?', '').split(isAddition ? ' + ' : ' - ').map(Number);
-        const expected = isAddition ? a + b : a - b;
-        expect(Math.abs(expected - Number(q.answer))).toBeLessThan(0.01);
+        if (q.text.includes(' × ')) {
+          const [a, b] = q.text.replace(' = ?', '').split(' × ').map(Number);
+          expect(Math.abs(a * b - Number(q.answer))).toBeLessThan(0.01);
+        } else {
+          const isAddition = q.text.includes(' + ');
+          const [a, b] = q.text.replace(' = ?', '').split(isAddition ? ' + ' : ' - ').map(Number);
+          const expected = isAddition ? a + b : a - b;
+          expect(Math.abs(expected - Number(q.answer))).toBeLessThan(0.01);
+        }
       }
     }
   });
@@ -142,34 +204,39 @@ describe('question engine: mathematical correctness', () => {
     }
   });
 
-  it('fractions: independently-simplified result matches answer', () => {
+  it('fractions: independently-recomputed add/subtract/multiply result matches answer', () => {
     for (const grade of GRADES) {
       for (const difficulty of DIFFICULTIES) {
         const q = generateQuestion('fractions', grade, difficulty);
-        const match = q.text.match(/^(\d+)\/(\d+) (\+|-) (\d+)\/(\d+) = \?$/);
+        const match = q.text.match(/^(\d+)\/(\d+) (\+|-|×) (\d+)\/(\d+) = \?$/);
         expect(match).not.toBeNull();
         const [, n1, d1, op, n2, d2] = match!;
         const num1 = Number(n1);
         const den1 = Number(d1);
         const num2 = Number(n2);
         const den2 = Number(d2);
-        const combinedNum = op === '+' ? num1 * den2 + num2 * den1 : num1 * den2 - num2 * den1;
-        const combinedDen = den1 * den2;
+
+        let combinedNum: number;
+        let combinedDen: number;
+        if (op === '×') {
+          combinedNum = num1 * num2;
+          combinedDen = den1 * den2;
+        } else {
+          combinedDen = den1 * den2;
+          combinedNum = op === '+' ? num1 * den2 + num2 * den1 : num1 * den2 - num2 * den1;
+        }
         expect(simplify(Math.abs(combinedNum), combinedDen)).toBe(q.answer);
       }
     }
   });
 
-  it('geometry: perimeter/area questions match width × height math', () => {
+  it('geometry: rectangle/triangle/circle questions are all internally consistent', () => {
     for (const grade of GRADES) {
-      const q = generateQuestion('geometry', grade, 2); // difficulty 2 => perimeter
-      const match = q.text.match(/(\d+) units wide and (\d+) units tall.*(perimeter|area)/);
-      expect(match).not.toBeNull();
-      const [, w, h, kind] = match!;
-      const width = Number(w);
-      const height = Number(h);
-      const expected = kind === 'perimeter' ? 2 * (width + height) : width * height;
-      expect(Number(q.answer)).toBe(expected);
+      for (const difficulty of [2, 3] as Difficulty[]) {
+        for (let i = 0; i < 15; i++) {
+          checkGeometryQuestion(generateQuestion('geometry', grade, difficulty));
+        }
+      }
     }
   });
 
@@ -180,6 +247,112 @@ describe('question engine: mathematical correctness', () => {
       expect(shapeNames).toContain(q.answer);
       expect(q.choices).toContain(q.answer);
     }
+  });
+});
+
+describe('question engine: grade-appropriate curriculum gating', () => {
+  it('order of operations: grade 1-2 never forces multiplication precedence', () => {
+    for (const grade of [1, 2] as Grade[]) {
+      for (const difficulty of DIFFICULTIES) {
+        for (let i = 0; i < 10; i++) {
+          const q = generateQuestion('orderOfOperations', grade, difficulty);
+          expect(q.text).not.toContain('×');
+        }
+      }
+    }
+  });
+
+  it('order of operations: grade 6-8 sometimes uses parentheses', () => {
+    let sawParens = false;
+    for (let i = 0; i < 60; i++) {
+      const q = generateQuestion('orderOfOperations', 8, 3);
+      if (q.text.includes('(')) sawParens = true;
+    }
+    expect(sawParens).toBe(true);
+  });
+
+  it('fractions: grade 1-2 is always addition of same-denominator fractions', () => {
+    for (const grade of [1, 2] as Grade[]) {
+      for (const difficulty of DIFFICULTIES) {
+        for (let i = 0; i < 10; i++) {
+          const q = generateQuestion('fractions', grade, difficulty);
+          expect(q.text).toContain('+');
+          expect(q.text).not.toContain('×');
+        }
+      }
+    }
+  });
+
+  it('fractions: grade 6-8 sometimes multiplies fractions', () => {
+    let sawMultiply = false;
+    for (let i = 0; i < 60; i++) {
+      const q = generateQuestion('fractions', 8, 3);
+      if (q.text.includes('×')) sawMultiply = true;
+    }
+    expect(sawMultiply).toBe(true);
+  });
+
+  it('addition/subtraction/multiplication/division: no negative numbers below grade 7', () => {
+    for (const grade of [1, 2, 3, 4, 5, 6] as Grade[]) {
+      for (const category of ['addition', 'subtraction', 'multiplication', 'division'] as const) {
+        for (const difficulty of DIFFICULTIES) {
+          for (let i = 0; i < 5; i++) {
+            const q = generateQuestion(category, grade, difficulty);
+            expect(q.text).not.toContain('(');
+          }
+        }
+      }
+    }
+  });
+
+  it('addition/subtraction/multiplication/division: grade 7-8 sometimes uses negative numbers', () => {
+    let sawNegative = false;
+    for (const category of ['addition', 'subtraction', 'multiplication', 'division'] as const) {
+      for (let i = 0; i < 40; i++) {
+        const q = generateQuestion(category, 8, 3);
+        if (q.text.includes('(')) sawNegative = true;
+      }
+    }
+    expect(sawNegative).toBe(true);
+  });
+
+  it('word problems: grade 1-2 are addition/subtraction only', () => {
+    for (const grade of [1, 2] as Grade[]) {
+      for (const difficulty of DIFFICULTIES) {
+        for (let i = 0; i < 10; i++) {
+          const q = generateQuestion('wordProblems', grade, difficulty);
+          expect(q.explanation).not.toContain('×');
+          expect(q.explanation).not.toContain('÷');
+        }
+      }
+    }
+  });
+
+  it('word problems: grade 5-8 sometimes includes division', () => {
+    let sawDivision = false;
+    for (let i = 0; i < 60; i++) {
+      const q = generateQuestion('wordProblems', 8, 3);
+      if (q.explanation.includes('÷')) sawDivision = true;
+    }
+    expect(sawDivision).toBe(true);
+  });
+
+  it('decimals: grade 6-8 sometimes multiplies decimals', () => {
+    let sawMultiply = false;
+    for (let i = 0; i < 60; i++) {
+      const q = generateQuestion('decimals', 8, 3);
+      if (q.text.includes('×')) sawMultiply = true;
+    }
+    expect(sawMultiply).toBe(true);
+  });
+
+  it('geometry: grade 7-8 sometimes uses triangle or circle questions, not just rectangles', () => {
+    let sawAdvanced = false;
+    for (let i = 0; i < 60; i++) {
+      const q = generateQuestion('geometry', 8, 3);
+      if (q.text.includes('triangle') || q.text.includes('circle')) sawAdvanced = true;
+    }
+    expect(sawAdvanced).toBe(true);
   });
 });
 

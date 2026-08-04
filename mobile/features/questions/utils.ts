@@ -35,6 +35,12 @@ export function xpForDifficulty(difficulty: Difficulty): number {
   return { 1: 10, 2: 15, 3: 20 }[difficulty];
 }
 
+// Renders negative numbers with parentheses (e.g. "(-8)") so they read
+// unambiguously inside an expression like "5 + (-8)".
+export function formatSigned(n: number): string {
+  return n < 0 ? `(${n})` : String(n);
+}
+
 /**
  * Builds a shuffled multiple-choice list containing the correct answer plus
  * `count` distinct plausible distractors produced by `distractorFn`.

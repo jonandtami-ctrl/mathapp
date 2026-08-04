@@ -1,6 +1,6 @@
 import type { Grade } from '../../../types';
 import type { Difficulty, EngineQuestion } from '../types';
-import { makeId, randomInt, xpForDifficulty } from '../utils';
+import { formatSigned, makeId, randomInt, xpForDifficulty } from '../utils';
 
 const GRADE_MAX: Record<Grade, number> = {
   1: 20,
@@ -16,8 +16,12 @@ const DIFFICULTY_FACTOR: Record<Difficulty, number> = { 1: 0.2, 2: 0.55, 3: 1 };
 
 export function generateAddition(grade: Grade, difficulty: Difficulty): EngineQuestion {
   const max = Math.max(10, Math.floor(GRADE_MAX[grade] * DIFFICULTY_FACTOR[difficulty]));
-  const a = randomInt(1, max);
-  const b = randomInt(1, max);
+
+  // Grade 7-8 works with integers (negative numbers), matching real
+  // middle-school curriculum rather than just bigger positive numbers.
+  const useIntegers = grade >= 7 && difficulty >= 2;
+  const a = randomInt(1, max) * (useIntegers && Math.random() < 0.5 ? -1 : 1);
+  const b = randomInt(1, max) * (useIntegers && Math.random() < 0.5 ? -1 : 1);
   const answer = a + b;
 
   return {
@@ -25,10 +29,10 @@ export function generateAddition(grade: Grade, difficulty: Difficulty): EngineQu
     grade,
     category: 'addition',
     difficulty,
-    text: `${a} + ${b} = ?`,
+    text: `${formatSigned(a)} + ${formatSigned(b)} = ?`,
     answer: String(answer),
     inputMode: 'numeric',
-    explanation: `${a} + ${b} = ${answer}`,
+    explanation: `${formatSigned(a)} + ${formatSigned(b)} = ${answer}`,
     xpValue: xpForDifficulty(difficulty),
   };
 }

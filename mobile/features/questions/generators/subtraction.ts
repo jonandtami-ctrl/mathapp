@@ -1,6 +1,6 @@
 import type { Grade } from '../../../types';
 import type { Difficulty, EngineQuestion } from '../types';
-import { makeId, randomInt, xpForDifficulty } from '../utils';
+import { formatSigned, makeId, randomInt, xpForDifficulty } from '../utils';
 
 const GRADE_MAX: Record<Grade, number> = {
   1: 20,
@@ -16,8 +16,20 @@ const DIFFICULTY_FACTOR: Record<Difficulty, number> = { 1: 0.2, 2: 0.55, 3: 1 };
 
 export function generateSubtraction(grade: Grade, difficulty: Difficulty): EngineQuestion {
   const max = Math.max(10, Math.floor(GRADE_MAX[grade] * DIFFICULTY_FACTOR[difficulty]));
-  const a = randomInt(1, max);
-  const b = randomInt(1, a); // keep result non-negative for v1
+
+  // Grade 7-8 works with true integer subtraction (negative operands and
+  // results allowed), matching real middle-school curriculum. Younger grades
+  // keep results non-negative to avoid introducing negative numbers early.
+  const useIntegers = grade >= 7 && difficulty >= 2;
+  let a: number;
+  let b: number;
+  if (useIntegers) {
+    a = randomInt(1, max) * (Math.random() < 0.5 ? -1 : 1);
+    b = randomInt(1, max) * (Math.random() < 0.5 ? -1 : 1);
+  } else {
+    a = randomInt(1, max);
+    b = randomInt(1, a);
+  }
   const answer = a - b;
 
   return {
@@ -25,10 +37,10 @@ export function generateSubtraction(grade: Grade, difficulty: Difficulty): Engin
     grade,
     category: 'subtraction',
     difficulty,
-    text: `${a} - ${b} = ?`,
+    text: `${formatSigned(a)} - ${formatSigned(b)} = ?`,
     answer: String(answer),
     inputMode: 'numeric',
-    explanation: `${a} - ${b} = ${answer}`,
+    explanation: `${formatSigned(a)} - ${formatSigned(b)} = ${answer}`,
     xpValue: xpForDifficulty(difficulty),
   };
 }

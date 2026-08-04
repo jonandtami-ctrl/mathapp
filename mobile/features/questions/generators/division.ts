@@ -1,6 +1,6 @@
 import type { Grade } from '../../../types';
 import type { Difficulty, EngineQuestion } from '../types';
-import { makeId, randomInt, xpForDifficulty } from '../utils';
+import { formatSigned, makeId, randomInt, xpForDifficulty } from '../utils';
 
 const GRADE_DIVISOR_MAX: Record<Grade, [number, number, number]> = {
   1: [2, 3, 4],
@@ -25,8 +25,17 @@ const GRADE_QUOTIENT_MAX: Record<Grade, [number, number, number]> = {
 };
 
 export function generateDivision(grade: Grade, difficulty: Difficulty): EngineQuestion {
-  const divisor = randomInt(2, GRADE_DIVISOR_MAX[grade][difficulty - 1]);
-  const quotient = randomInt(2, GRADE_QUOTIENT_MAX[grade][difficulty - 1]);
+  let divisor = randomInt(2, GRADE_DIVISOR_MAX[grade][difficulty - 1]);
+  let quotient = randomInt(2, GRADE_QUOTIENT_MAX[grade][difficulty - 1]);
+
+  // Grade 7-8 practices sign rules for division, matching addition/
+  // subtraction/multiplication's integer support at this grade band.
+  const useIntegers = grade >= 7 && difficulty >= 2;
+  if (useIntegers) {
+    if (Math.random() < 0.5) divisor = -divisor;
+    if (Math.random() < 0.5) quotient = -quotient;
+  }
+
   const dividend = divisor * quotient;
 
   return {
@@ -34,10 +43,10 @@ export function generateDivision(grade: Grade, difficulty: Difficulty): EngineQu
     grade,
     category: 'division',
     difficulty,
-    text: `${dividend} ÷ ${divisor} = ?`,
+    text: `${formatSigned(dividend)} ÷ ${formatSigned(divisor)} = ?`,
     answer: String(quotient),
     inputMode: 'numeric',
-    explanation: `${dividend} ÷ ${divisor} = ${quotient}`,
+    explanation: `${formatSigned(dividend)} ÷ ${formatSigned(divisor)} = ${quotient}`,
     xpValue: xpForDifficulty(difficulty),
   };
 }
