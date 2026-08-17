@@ -41,6 +41,18 @@ export const gradients = {
   mixed: [colors.pink, colors.purpleAccent, colors.blue] as const,
 } as const;
 
+// One distinct gradient per grade (1-8), reusing the existing palette.
+export const gradeAccents = [
+  [colors.blue, colors.purpleDeep],
+  [colors.orange, colors.pink],
+  [colors.green, colors.greenDeep],
+  [colors.pink, colors.pinkDeep],
+  [colors.primary, colors.primaryLight],
+  [colors.teal, colors.blue],
+  [colors.purpleAccent, colors.pink],
+  [colors.gold, colors.orange],
+] as const;
+
 export const spacing = {
   xs: 4,
   sm: 8,

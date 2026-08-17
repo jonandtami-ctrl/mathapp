@@ -2,15 +2,19 @@ import type { Grade } from '../../../types';
 import type { Difficulty, EngineQuestion } from '../types';
 import { makeId, randomInt, xpForDifficulty } from '../utils';
 
+// Kept intentionally small at every grade: decimal problems test precision
+// (place value, alignment), not big-number arithmetic - a whole-number part
+// in the thousands would make mental math needlessly punishing rather than
+// harder in the intended way.
 const GRADE_WHOLE_MAX: Record<Grade, number> = {
   1: 3,
   2: 5,
   3: 10,
-  4: 30,
-  5: 100,
-  6: 500,
-  7: 1000,
-  8: 3000,
+  4: 20,
+  5: 40,
+  6: 80,
+  7: 150,
+  8: 250,
 };
 
 function randomDecimal(wholeMax: number, decimalPlaces: number): number {
