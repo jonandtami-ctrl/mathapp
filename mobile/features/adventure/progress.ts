@@ -27,9 +27,13 @@ export function isStageUnlocked(world: WorldDef, stage: Stage, progress: Adventu
   return (previousProgress?.stars ?? 0) >= 1;
 }
 
-export function isWorldUnlocked(worldIndex: number, progress: AdventureProgress): boolean {
-  if (worldIndex === 0) return true;
-  const previousWorld = WORLDS[worldIndex - 1];
+// `availableWorlds` should be the grade-filtered list (see getAvailableWorlds)
+// so the unlock chain skips over worlds not yet appropriate for the child's
+// grade, rather than getting stuck on one that has nothing to show.
+export function isWorldUnlocked(world: WorldDef, availableWorlds: WorldDef[], progress: AdventureProgress): boolean {
+  const index = availableWorlds.findIndex((w) => w.id === world.id);
+  if (index <= 0) return true;
+  const previousWorld = availableWorlds[index - 1];
   const bossStage = previousWorld.stages[previousWorld.stages.length - 1];
   const bossProgress = getStageProgress(progress, previousWorld.id, bossStage.id);
   return (bossProgress?.stars ?? 0) >= 1;

@@ -1,26 +1,35 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { WORLDS } from './worlds';
+import { WORLDS, getAvailableWorlds } from './worlds';
 import { getWorldStarTotal, isWorldUnlocked } from './progress';
 import { colors, radii, spacing, typography } from '../../constants/theme';
-import type { AdventureProgress } from '../../types';
+import type { AdventureProgress, Grade } from '../../types';
 import type { WorldId } from './types';
 
 type WorldMapProps = {
+  grade: Grade;
   progress: AdventureProgress;
   onSelectWorld: (worldId: WorldId) => void;
 };
 
-export default function WorldMap({ progress, onSelectWorld }: WorldMapProps) {
+export default function WorldMap({ grade, progress, onSelectWorld }: WorldMapProps) {
+  const availableWorlds = getAvailableWorlds(grade);
+
   return (
     <View>
       <Text style={styles.title}>🗺️ Adventure Mode</Text>
       <Text style={styles.subtitle}>Earn stars to unlock the next world!</Text>
 
-      {WORLDS.map((world, index) => {
-        const unlocked = isWorldUnlocked(index, progress);
+      {WORLDS.map((world) => {
+        const gradeGated = grade < world.minGrade;
+        const unlocked = !gradeGated && isWorldUnlocked(world, availableWorlds, progress);
         const { earned, max } = getWorldStarTotal(world, progress);
+
+        let statusText: string;
+        if (gradeGated) statusText = `Unlocks at Grade ${world.minGrade}`;
+        else if (unlocked) statusText = `⭐ ${earned}/${max} stars`;
+        else statusText = "Beat the previous world's boss to unlock";
 
         return (
           <TouchableOpacity
@@ -39,11 +48,7 @@ export default function WorldMap({ progress, onSelectWorld }: WorldMapProps) {
               <Text style={styles.icon}>{unlocked ? world.icon : '🔒'}</Text>
               <View style={styles.textBlock}>
                 <Text style={styles.name}>{world.name}</Text>
-                {unlocked ? (
-                  <Text style={styles.stars}>⭐ {earned}/{max} stars</Text>
-                ) : (
-                  <Text style={styles.stars}>Beat the previous world's boss to unlock</Text>
-                )}
+                <Text style={styles.stars}>{statusText}</Text>
               </View>
             </LinearGradient>
           </TouchableOpacity>

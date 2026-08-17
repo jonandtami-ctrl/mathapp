@@ -1,4 +1,4 @@
-import type { Category } from '../../types';
+import type { Category, Grade } from '../../types';
 import type { Difficulty } from '../questions/types';
 import type { BossStage, LevelStage, Stage, WorldDef, WorldId } from './types';
 
@@ -36,12 +36,19 @@ function buildStages(
   return [...levels, bossStage];
 }
 
+// Ordered so a Grade 1 player has a full sequence of worlds they can
+// actually play (addition/subtraction, word problems, geometry, simple
+// number sentences) before hitting anything gated to a later grade.
+// minGrade mirrors CATEGORY_MIN_GRADE in features/questions/index.ts,
+// based on Common Core: multiplication/division/fractions start Grade 3,
+// decimals start Grade 4.
 export const WORLDS: WorldDef[] = [
   {
     id: 'numberForest',
     name: 'Number Forest',
     icon: '🌲',
     colors: ['#38ef7d', '#11998e'],
+    minGrade: 1,
     stages: buildStages(
       'numberForest',
       ['addition', 'subtraction', 'addition', 'subtraction', 'addition'],
@@ -49,47 +56,15 @@ export const WORLDS: WorldDef[] = [
     ),
   },
   {
-    id: 'multiplicationMountain',
-    name: 'Multiplication Mountain',
-    icon: '⛰️',
-    colors: ['#4facfe', '#7b5ffc'],
+    id: 'wordProblemWoods',
+    name: 'Word Problem Woods',
+    icon: '📖',
+    colors: ['#ff9a56', '#38ef7d'],
+    minGrade: 1,
     stages: buildStages(
-      'multiplicationMountain',
-      ['multiplication', 'multiplication', 'multiplication', 'multiplication', 'multiplication'],
-      { category: 'multiplication', name: 'Boulderfang', emoji: '🗿' },
-    ),
-  },
-  {
-    id: 'divisionDunes',
-    name: 'Division Dunes',
-    icon: '🏜️',
-    colors: ['#ff9a56', '#ff6a88'],
-    stages: buildStages(
-      'divisionDunes',
-      ['division', 'division', 'division', 'division', 'division'],
-      { category: 'division', name: 'Sandwyrm', emoji: '🐍' },
-    ),
-  },
-  {
-    id: 'fractionFalls',
-    name: 'Fraction Falls',
-    icon: '💧',
-    colors: ['#4facfe', '#38ef7d'],
-    stages: buildStages(
-      'fractionFalls',
-      ['fractions', 'fractions', 'fractions', 'fractions', 'fractions'],
-      { category: 'fractions', name: 'Splitscale', emoji: '🐉' },
-    ),
-  },
-  {
-    id: 'decimalDesert',
-    name: 'Decimal Desert',
-    icon: '🏖️',
-    colors: ['#f9748f', '#f78ca0'],
-    stages: buildStages(
-      'decimalDesert',
-      ['decimals', 'decimals', 'decimals', 'decimals', 'decimals'],
-      { category: 'decimals', name: 'Point Phantom', emoji: '👻' },
+      'wordProblemWoods',
+      ['wordProblems', 'wordProblems', 'wordProblems', 'wordProblems', 'wordProblems'],
+      { category: 'wordProblems', name: 'Riddle Robot', emoji: '🤖' },
     ),
   },
   {
@@ -97,6 +72,7 @@ export const WORLDS: WorldDef[] = [
     name: 'Geometry Kingdom',
     icon: '🏰',
     colors: ['#a06cd5', '#7b5ffc'],
+    minGrade: 1,
     stages: buildStages(
       'geometryKingdom',
       ['geometry', 'geometry', 'geometry', 'geometry', 'geometry'],
@@ -108,6 +84,7 @@ export const WORLDS: WorldDef[] = [
     name: 'Algebra Galaxy',
     icon: '🌌',
     colors: ['#6d5bd0', '#4facfe'],
+    minGrade: 1,
     stages: buildStages(
       'orderOfOperationsGalaxy',
       [
@@ -121,18 +98,59 @@ export const WORLDS: WorldDef[] = [
     ),
   },
   {
-    id: 'wordProblemWoods',
-    name: 'Word Problem Woods',
-    icon: '📖',
-    colors: ['#ff9a56', '#38ef7d'],
+    id: 'multiplicationMountain',
+    name: 'Multiplication Mountain',
+    icon: '⛰️',
+    colors: ['#4facfe', '#7b5ffc'],
+    minGrade: 3,
     stages: buildStages(
-      'wordProblemWoods',
-      ['wordProblems', 'wordProblems', 'wordProblems', 'wordProblems', 'wordProblems'],
-      { category: 'wordProblems', name: 'Riddle Robot', emoji: '🤖' },
+      'multiplicationMountain',
+      ['multiplication', 'multiplication', 'multiplication', 'multiplication', 'multiplication'],
+      { category: 'multiplication', name: 'Boulderfang', emoji: '🗿' },
+    ),
+  },
+  {
+    id: 'divisionDunes',
+    name: 'Division Dunes',
+    icon: '🏜️',
+    colors: ['#ff9a56', '#ff6a88'],
+    minGrade: 3,
+    stages: buildStages(
+      'divisionDunes',
+      ['division', 'division', 'division', 'division', 'division'],
+      { category: 'division', name: 'Sandwyrm', emoji: '🐍' },
+    ),
+  },
+  {
+    id: 'fractionFalls',
+    name: 'Fraction Falls',
+    icon: '💧',
+    colors: ['#4facfe', '#38ef7d'],
+    minGrade: 3,
+    stages: buildStages(
+      'fractionFalls',
+      ['fractions', 'fractions', 'fractions', 'fractions', 'fractions'],
+      { category: 'fractions', name: 'Splitscale', emoji: '🐉' },
+    ),
+  },
+  {
+    id: 'decimalDesert',
+    name: 'Decimal Desert',
+    icon: '🏖️',
+    colors: ['#f9748f', '#f78ca0'],
+    minGrade: 4,
+    stages: buildStages(
+      'decimalDesert',
+      ['decimals', 'decimals', 'decimals', 'decimals', 'decimals'],
+      { category: 'decimals', name: 'Point Phantom', emoji: '👻' },
     ),
   },
 ];
 
 export function getWorld(worldId: WorldId): WorldDef {
   return WORLDS.find((w) => w.id === worldId)!;
+}
+
+export function getAvailableWorlds(grade: Grade): WorldDef[] {
+  return WORLDS.filter((w) => grade >= w.minGrade);
 }

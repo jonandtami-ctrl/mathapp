@@ -1,4 +1,4 @@
-import type { Category } from '../../types';
+import type { Category, Grade } from '../../types';
 import type { Difficulty } from '../questions/types';
 
 export type { StarRating, StageProgress, AdventureProgress } from '../../types';
@@ -42,4 +42,5 @@ export type WorldDef = {
   icon: string;
   colors: readonly [string, string, ...string[]];
   stages: Stage[];
+  minGrade: Grade; // grade this world's category is first curriculum-appropriate for
 };

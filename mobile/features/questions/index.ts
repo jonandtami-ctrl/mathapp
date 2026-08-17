@@ -37,6 +37,29 @@ const generatorsByCategory: Record<Category, Generator> = {
   wordProblems: generateWordProblems,
 };
 
+// Grade a category is first appropriate for, based on U.S. Common Core
+// standards: multiplication/division are introduced in Grade 3 (3.OA),
+// fractions as numbers in Grade 3 (3.NF), and decimal notation in Grade 4
+// (4.NF/4.NBT). Everything else (addition/subtraction, order-of-operations
+// "number sentences", shape geometry, word problems) degrades to an
+// age-appropriate form starting at Grade 1 within its own generator, so it
+// has no hard floor here.
+const CATEGORY_MIN_GRADE: Record<Category, Grade> = {
+  addition: 1,
+  subtraction: 1,
+  multiplication: 3,
+  division: 3,
+  fractions: 3,
+  decimals: 4,
+  orderOfOperations: 1,
+  geometry: 1,
+  wordProblems: 1,
+};
+
+export function getAvailableCategories(grade: Grade): Category[] {
+  return (Object.keys(generatorsByCategory) as Category[]).filter((c) => grade >= CATEGORY_MIN_GRADE[c]);
+}
+
 export function generateQuestion(category: Category, grade: Grade, difficulty: Difficulty): EngineQuestion {
   return generatorsByCategory[category](grade, difficulty);
 }
@@ -77,7 +100,7 @@ function difficultyForIndex(index: number): Difficulty {
 }
 
 export function generateQuickPlaySet(grade: Grade): EngineQuestion[] {
-  const categories = Object.keys(generatorsByCategory) as Category[];
+  const categories = getAvailableCategories(grade);
   const set: EngineQuestion[] = [];
   const seenTexts = new Set<string>();
   let lastCategory: Category | null = null;

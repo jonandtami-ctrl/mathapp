@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import ScreenContainer from '../../components/ScreenContainer';
 import LoadingState from '../../components/LoadingState';
 import ProgressBar from '../../components/ProgressBar';
+import PressableScale from '../../components/PressableScale';
 import GradeSelector from '../../features/profile/GradeSelector';
 import ModeSelect from '../../features/gameplay/ModeSelect';
 import QuizFlow from '../../features/gameplay/QuizFlow';
@@ -116,7 +117,7 @@ export default function HomeTab() {
 
           <GradeSelector selectedGrade={profile.grade} onSelect={updateGrade} />
 
-          <TouchableOpacity onPress={() => setState('quickplay')} activeOpacity={0.85}>
+          <PressableScale onPress={() => setState('quickplay')}>
             <LinearGradient colors={gradients.mixed} style={styles.quickPlayCard}>
               <Text style={styles.quickPlayIcon}>⚡</Text>
               <Text style={styles.quickPlayTitle}>Quick Play</Text>
@@ -124,15 +125,15 @@ export default function HomeTab() {
                 10 mixed questions for Grade {profile.grade} — earn XP and coins!
               </Text>
             </LinearGradient>
-          </TouchableOpacity>
+          </PressableScale>
 
-          <TouchableOpacity onPress={() => setState('adventure-worldmap')} activeOpacity={0.85}>
+          <PressableScale onPress={() => setState('adventure-worldmap')}>
             <LinearGradient colors={gradients.successButton} style={styles.quickPlayCard}>
               <Text style={styles.quickPlayIcon}>🗺️</Text>
               <Text style={styles.quickPlayTitle}>Adventure Mode</Text>
               <Text style={styles.quickPlaySubtitle}>Explore 8 worlds, earn stars, defeat bosses!</Text>
             </LinearGradient>
-          </TouchableOpacity>
+          </PressableScale>
 
           <Text style={styles.divider}>or try Classic Practice</Text>
           <ModeSelect onSelectMode={startClassic} />
@@ -161,7 +162,7 @@ export default function HomeTab() {
       )}
 
       {state === 'adventure-worldmap' && (
-        <WorldMap progress={profile.adventureProgress} onSelectWorld={openWorld} />
+        <WorldMap grade={profile.grade} progress={profile.adventureProgress} onSelectWorld={openWorld} />
       )}
 
       {state === 'adventure-levelmap' && world && (

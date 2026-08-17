@@ -1,6 +1,7 @@
-import { CATEGORY_META, generateQuestion, generateQuickPlaySet } from '../features/questions';
+import { CATEGORY_META, generateQuestion, generateQuickPlaySet, getAvailableCategories } from '../features/questions';
 import type { EngineQuestion } from '../features/questions';
 import type { Difficulty } from '../features/questions/types';
+import { getAvailableWorlds, WORLDS } from '../features/adventure/worlds';
 import type { Grade } from '../types';
 
 const GRADES: Grade[] = [1, 2, 3, 4, 5, 6, 7, 8];
@@ -373,4 +374,65 @@ describe('Quick Play session generation', () => {
       set.forEach((q) => expect(q.grade).toBe(grade));
     });
   }
+});
+
+describe('curriculum grade-gating (Common Core minimums)', () => {
+  it('grade 1-2: multiplication, division, fractions, and decimals are unavailable', () => {
+    for (const grade of [1, 2] as Grade[]) {
+      const available = getAvailableCategories(grade);
+      expect(available).not.toContain('multiplication');
+      expect(available).not.toContain('division');
+      expect(available).not.toContain('fractions');
+      expect(available).not.toContain('decimals');
+      expect(available).toContain('addition');
+      expect(available).toContain('subtraction');
+    }
+  });
+
+  it('grade 3: multiplication, division, fractions unlock, but not decimals', () => {
+    const available = getAvailableCategories(3);
+    expect(available).toContain('multiplication');
+    expect(available).toContain('division');
+    expect(available).toContain('fractions');
+    expect(available).not.toContain('decimals');
+  });
+
+  it('grade 4+: decimals are available', () => {
+    for (const grade of [4, 5, 6, 7, 8] as Grade[]) {
+      expect(getAvailableCategories(grade)).toContain('decimals');
+    }
+  });
+
+  it('Quick Play never draws a gated category for that grade', () => {
+    for (const grade of GRADES) {
+      const available = new Set(getAvailableCategories(grade));
+      for (let i = 0; i < 5; i++) {
+        const set = generateQuickPlaySet(grade);
+        set.forEach((q) => expect(available.has(q.category)).toBe(true));
+      }
+    }
+  });
+
+  it('grade 1-2: Adventure Mode has no multiplication/division/fraction/decimal worlds available', () => {
+    for (const grade of [1, 2] as Grade[]) {
+      const worldIds = getAvailableWorlds(grade).map((w) => w.id);
+      expect(worldIds).not.toContain('multiplicationMountain');
+      expect(worldIds).not.toContain('divisionDunes');
+      expect(worldIds).not.toContain('fractionFalls');
+      expect(worldIds).not.toContain('decimalDesert');
+      expect(worldIds).toContain('numberForest');
+    }
+  });
+
+  it('grade 4+: all 8 Adventure Mode worlds are available', () => {
+    for (const grade of [4, 5, 6, 7, 8] as Grade[]) {
+      expect(getAvailableWorlds(grade)).toHaveLength(WORLDS.length);
+    }
+  });
+
+  it('every world requires at least Grade 1, and Decimal Desert requires Grade 4', () => {
+    WORLDS.forEach((w) => expect(w.minGrade).toBeGreaterThanOrEqual(1));
+    const decimalDesert = WORLDS.find((w) => w.id === 'decimalDesert')!;
+    expect(decimalDesert.minGrade).toBe(4);
+  });
 });
