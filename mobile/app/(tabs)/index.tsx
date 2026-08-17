@@ -1,59 +1,194 @@
-import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import React, { useState } from 'react';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import ScreenContainer from '../../components/ScreenContainer';
-import Button from '../../components/Button';
 import LoadingState from '../../components/LoadingState';
 import ProgressBar from '../../components/ProgressBar';
-import { useProfile } from '../../features/profile/ProfileContext';
+import GradeSelector from '../../features/profile/GradeSelector';
+import ModeSelect from '../../features/gameplay/ModeSelect';
+import QuizFlow from '../../features/gameplay/QuizFlow';
+import ResultsSummary from '../../features/gameplay/ResultsSummary';
+import QuickPlay from '../../features/gameplay/QuickPlay';
+import QuickPlayResults from '../../features/gameplay/QuickPlayResults';
+import WorldMap from '../../features/adventure/WorldMap';
+import LevelMap from '../../features/adventure/LevelMap';
+import LevelSession from '../../features/adventure/LevelSession';
+import LevelResults from '../../features/adventure/LevelResults';
+import BossBattle from '../../features/adventure/BossBattle';
+import { getWorld } from '../../features/adventure/worlds';
+import type { SessionOutcome } from '../../features/gameplay/QuestionSession';
+import type { Stage, WorldId } from '../../features/adventure/types';
+import { useProfile, type QuizResult } from '../../features/profile/ProfileContext';
 import { getLevelInfo } from '../../constants/leveling';
-import { colors, spacing, typography } from '../../constants/theme';
+import { colors, gradients, radii, spacing, typography } from '../../constants/theme';
+import type { GameMode } from '../../types';
+
+type PlayState =
+  | 'menu'
+  | 'quickplay'
+  | 'quickplay-results'
+  | 'classic-quiz'
+  | 'classic-results'
+  | 'adventure-worldmap'
+  | 'adventure-levelmap'
+  | 'adventure-stage'
+  | 'adventure-results';
 
 export default function HomeTab() {
-  const { profile, loading } = useProfile();
-  const router = useRouter();
+  const { profile, loading, updateGrade, recordQuizResult, recordLevelResult } = useProfile();
+  const [state, setState] = useState<PlayState>('menu');
+  const [classicMode, setClassicMode] = useState<GameMode | null>(null);
+  const [classicScore, setClassicScore] = useState(0);
+  const [quickPlayResult, setQuickPlayResult] = useState<QuizResult | null>(null);
+  const [selectedWorldId, setSelectedWorldId] = useState<WorldId | null>(null);
+  const [selectedStage, setSelectedStage] = useState<Stage | null>(null);
+  const [adventureOutcome, setAdventureOutcome] = useState<SessionOutcome | null>(null);
 
   if (loading || !profile) {
     return (
       <ScreenContainer>
-        <LoadingState message="Loading your profile..." />
+        <LoadingState message="Loading Epic Math..." />
       </ScreenContainer>
     );
   }
 
   const levelInfo = getLevelInfo(profile.xp);
 
+  function startClassic(mode: GameMode) {
+    setClassicMode(mode);
+    setState('classic-quiz');
+  }
+
+  function finishClassic(score: number) {
+    setClassicScore(score);
+    setState('classic-results');
+  }
+
+  async function finishQuickPlay(result: QuizResult) {
+    setQuickPlayResult(result);
+    await recordQuizResult(result);
+    setState('quickplay-results');
+  }
+
+  function openWorld(worldId: WorldId) {
+    setSelectedWorldId(worldId);
+    setState('adventure-levelmap');
+  }
+
+  function openStage(stage: Stage) {
+    setSelectedStage(stage);
+    setState('adventure-stage');
+  }
+
+  async function finishStage(outcome: SessionOutcome) {
+    if (!selectedWorldId || !selectedStage) return;
+    setAdventureOutcome(outcome);
+    await recordLevelResult({
+      worldId: selectedWorldId,
+      stageId: selectedStage.id,
+      category: selectedStage.category,
+      xpEarned: outcome.xpEarned,
+      coinsEarned: outcome.coinsEarned,
+      correctCount: outcome.correctCount,
+      totalCount: outcome.totalCount,
+    });
+    setState('adventure-results');
+  }
+
+  const world = selectedWorldId ? getWorld(selectedWorldId) : null;
+
   return (
     <ScreenContainer>
-      <Text style={styles.logo}>⚡ Epic Math</Text>
-      <View style={styles.profileRow}>
-        <Text style={styles.avatar}>{profile.avatar}</Text>
+      {state === 'menu' && (
         <View>
-          <Text style={styles.nickname}>{profile.nickname}</Text>
-          <Text style={styles.grade}>Grade {profile.grade}</Text>
-        </View>
-      </View>
+          <Text style={styles.logo}>⚡ Epic Math</Text>
 
-      <View style={styles.levelRow}>
-        <Text style={styles.levelLabel}>Level {levelInfo.level}</Text>
-        <Text style={styles.levelXp}>
-          {levelInfo.xpIntoLevel} / {levelInfo.xpForNextLevel} XP
-        </Text>
-      </View>
-      <ProgressBar progress={levelInfo.progress} height={12} />
+          <View style={styles.profileRow}>
+            <Text style={styles.avatar}>{profile.avatar}</Text>
+            <View style={styles.profileText}>
+              <Text style={styles.nickname}>{profile.nickname}</Text>
+              <Text style={styles.levelLine}>
+                Level {levelInfo.level} · 🪙 {profile.coins} · 🔥 {profile.dailyStreak}
+              </Text>
+            </View>
+          </View>
+          <ProgressBar progress={levelInfo.progress} height={8} />
 
-      <View style={styles.statsRow}>
-        <View style={styles.statBox}>
-          <Text style={styles.statValue}>{profile.coins}</Text>
-          <Text style={styles.statLabel}>Coins</Text>
-        </View>
-        <View style={styles.statBox}>
-          <Text style={styles.statValue}>🔥 {profile.dailyStreak}</Text>
-          <Text style={styles.statLabel}>Day Streak</Text>
-        </View>
-      </View>
+          <GradeSelector selectedGrade={profile.grade} onSelect={updateGrade} />
 
-      <Button label="Continue Playing →" fullWidth onPress={() => router.push('/play')} />
+          <TouchableOpacity onPress={() => setState('quickplay')} activeOpacity={0.85}>
+            <LinearGradient colors={gradients.mixed} style={styles.quickPlayCard}>
+              <Text style={styles.quickPlayIcon}>⚡</Text>
+              <Text style={styles.quickPlayTitle}>Quick Play</Text>
+              <Text style={styles.quickPlaySubtitle}>
+                10 mixed questions for Grade {profile.grade} — earn XP and coins!
+              </Text>
+            </LinearGradient>
+          </TouchableOpacity>
+
+          <TouchableOpacity onPress={() => setState('adventure-worldmap')} activeOpacity={0.85}>
+            <LinearGradient colors={gradients.successButton} style={styles.quickPlayCard}>
+              <Text style={styles.quickPlayIcon}>🗺️</Text>
+              <Text style={styles.quickPlayTitle}>Adventure Mode</Text>
+              <Text style={styles.quickPlaySubtitle}>Explore 8 worlds, earn stars, defeat bosses!</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+
+          <Text style={styles.divider}>or try Classic Practice</Text>
+          <ModeSelect onSelectMode={startClassic} />
+        </View>
+      )}
+
+      {state === 'quickplay' && <QuickPlay grade={profile.grade} onFinish={finishQuickPlay} />}
+
+      {state === 'quickplay-results' && quickPlayResult && (
+        <QuickPlayResults
+          result={quickPlayResult}
+          onPlayAgain={() => setState('quickplay')}
+          onHome={() => setState('menu')}
+        />
+      )}
+
+      {state === 'classic-quiz' && classicMode && <QuizFlow mode={classicMode} onFinish={finishClassic} />}
+
+      {state === 'classic-results' && classicMode && (
+        <ResultsSummary
+          score={classicScore}
+          mode={classicMode}
+          onRetry={startClassic}
+          onHome={() => setState('menu')}
+        />
+      )}
+
+      {state === 'adventure-worldmap' && (
+        <WorldMap progress={profile.adventureProgress} onSelectWorld={openWorld} />
+      )}
+
+      {state === 'adventure-levelmap' && world && (
+        <LevelMap
+          world={world}
+          progress={profile.adventureProgress}
+          onSelectStage={openStage}
+          onBack={() => setState('adventure-worldmap')}
+        />
+      )}
+
+      {state === 'adventure-stage' &&
+        selectedStage &&
+        (selectedStage.kind === 'level' ? (
+          <LevelSession stage={selectedStage} grade={profile.grade} onFinish={finishStage} />
+        ) : (
+          <BossBattle stage={selectedStage} grade={profile.grade} onFinish={finishStage} />
+        ))}
+
+      {state === 'adventure-results' && selectedStage && adventureOutcome && (
+        <LevelResults
+          stage={selectedStage}
+          outcome={adventureOutcome}
+          onRetry={() => setState('adventure-stage')}
+          onBackToLevels={() => setState('adventure-levelmap')}
+        />
+      )}
     </ScreenContainer>
   );
 }
@@ -64,61 +199,55 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colors.textHeading,
     textAlign: 'center',
-    marginBottom: spacing.xxl,
+    marginBottom: spacing.lg,
   },
   profileRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.lg,
-    marginBottom: spacing.xl,
+    gap: spacing.md,
+    marginBottom: spacing.sm,
   },
   avatar: {
-    fontSize: 48,
+    fontSize: 36,
+  },
+  profileText: {
+    flex: 1,
   },
   nickname: {
     fontSize: typography.heading2.fontSize,
     fontWeight: '700',
     color: colors.textBody,
   },
-  grade: {
-    fontSize: typography.body.fontSize,
-    color: colors.textMuted,
-  },
-  levelRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: spacing.sm,
-  },
-  levelLabel: {
-    fontWeight: '700',
-    color: colors.textHeading,
-    fontSize: 15,
-  },
-  levelXp: {
-    color: colors.textMuted,
+  levelLine: {
     fontSize: typography.small.fontSize,
+    color: colors.textMuted,
+    marginTop: 2,
   },
-  statsRow: {
-    flexDirection: 'row',
-    gap: spacing.lg,
-    marginTop: spacing.xl,
-    marginBottom: spacing.xxl,
-  },
-  statBox: {
-    flex: 1,
-    backgroundColor: colors.track,
-    borderRadius: 16,
-    paddingVertical: spacing.lg,
+  quickPlayCard: {
+    borderRadius: radii.xl,
+    padding: spacing.xxl,
     alignItems: 'center',
+    marginBottom: spacing.xl,
   },
-  statValue: {
-    fontSize: 24,
+  quickPlayIcon: {
+    fontSize: 36,
+    marginBottom: spacing.xs,
+  },
+  quickPlayTitle: {
+    fontSize: 22,
     fontWeight: '700',
-    color: colors.textHeading,
+    color: colors.surface,
   },
-  statLabel: {
+  quickPlaySubtitle: {
     fontSize: typography.small.fontSize,
-    color: colors.textMuted,
+    color: '#ffffffdd',
+    textAlign: 'center',
     marginTop: spacing.xs,
+  },
+  divider: {
+    textAlign: 'center',
+    color: colors.textMuted,
+    marginBottom: spacing.lg,
+    fontSize: typography.small.fontSize,
   },
 });

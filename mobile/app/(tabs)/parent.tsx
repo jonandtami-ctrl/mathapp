@@ -1,17 +1,14 @@
 import React from 'react';
-import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, StyleSheet, Text } from 'react-native';
 import ScreenContainer from '../../components/ScreenContainer';
 import LoadingState from '../../components/LoadingState';
 import EmptyState from '../../components/EmptyState';
 import Button from '../../components/Button';
 import { useProfile } from '../../features/profile/ProfileContext';
-import { colors, radii, spacing, typography } from '../../constants/theme';
-import type { Grade } from '../../types';
-
-const GRADES: Grade[] = [1, 2, 3, 4, 5, 6, 7, 8];
+import { colors, spacing, typography } from '../../constants/theme';
 
 export default function ParentTab() {
-  const { profile, loading, updateGrade, resetProfile } = useProfile();
+  const { profile, loading, resetProfile } = useProfile();
 
   function confirmReset() {
     Alert.alert(
@@ -36,32 +33,11 @@ export default function ParentTab() {
     <ScreenContainer>
       <Text style={styles.title}>👪 Parent</Text>
 
-      <Text style={styles.sectionTitle}>{profile.nickname}'s Grade</Text>
-      <Text style={styles.sectionSubtitle}>Controls the difficulty of Quick Play and Adventure Mode.</Text>
-      <View style={styles.gradeRow}>
-        {GRADES.map((grade) => {
-          const isSelected = profile.grade === grade;
-          return (
-            <TouchableOpacity
-              key={grade}
-              onPress={() => updateGrade(grade)}
-              style={[styles.gradeChip, isSelected && styles.gradeChipSelected]}
-            >
-              <Text style={[styles.gradeChipText, isSelected && styles.gradeChipTextSelected]}>{grade}</Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
-
-      <View style={styles.divider} />
-
       <EmptyState
         icon="🔒"
         title="Full parent dashboard is coming soon"
-        message="PIN protection, progress reports, goals, and subscription management arrive in Phase 5, after accounts (Phase 4) exist."
+        message="PIN protection, progress reports, goals, and subscription management arrive in Phase 5, after accounts (Phase 4) exist. Grade level can be changed anytime from the Home tab."
       />
-
-      <View style={styles.divider} />
 
       <Text style={styles.sectionTitle}>Reset</Text>
       <Text style={styles.sectionSubtitle}>
@@ -84,40 +60,12 @@ const styles = StyleSheet.create({
     fontSize: typography.heading2.fontSize,
     fontWeight: '700',
     color: colors.textHeading,
+    marginTop: spacing.xxl,
     marginBottom: spacing.xs,
   },
   sectionSubtitle: {
     fontSize: typography.small.fontSize,
     color: colors.textMuted,
     marginBottom: spacing.lg,
-  },
-  gradeRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-  },
-  gradeChip: {
-    width: 48,
-    height: 48,
-    borderRadius: radii.md,
-    backgroundColor: colors.track,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  gradeChipSelected: {
-    backgroundColor: colors.primary,
-  },
-  gradeChipText: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: colors.textBody,
-  },
-  gradeChipTextSelected: {
-    color: colors.surface,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: colors.track,
-    marginVertical: spacing.xxl,
   },
 });
