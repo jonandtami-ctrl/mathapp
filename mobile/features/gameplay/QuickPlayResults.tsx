@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Confetti from '../../components/Confetti';
+import EinsteinCelebration from './EinsteinCelebration';
 import { colors, gradients, radii, spacing, typography } from '../../constants/theme';
 import type { QuizResult } from '../profile/ProfileContext';
 
@@ -35,6 +36,8 @@ export default function QuickPlayResults({ result, onPlayAgain, onHome }: QuickP
         {result.correctCount} / {result.totalCount} correct
       </Text>
       <Text style={styles.message}>{tierMessage(accuracy)}</Text>
+
+      <EinsteinCelebration accuracy={accuracy} />
 
       <View style={styles.statsRow}>
         <View style={styles.statBox}>

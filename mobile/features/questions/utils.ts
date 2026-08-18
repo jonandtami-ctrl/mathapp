@@ -55,6 +55,14 @@ export function makeChoices(correct: string, distractorFn: () => string, count =
   return shuffle(Array.from(choices));
 }
 
+// Pads two numbers' decimal strings with trailing zeros so their decimal
+// points line up when stacked vertically (e.g. 3.5 and 12.75 -> "3.50", "12.75").
+export function alignDecimalStrings(a: number, b: number): [string, string] {
+  const placesOf = (n: number) => (String(n).split('.')[1] ?? '').length;
+  const places = Math.max(placesOf(a), placesOf(b));
+  return [a.toFixed(places), b.toFixed(places)];
+}
+
 export function isNumericAnswerCorrect(submitted: string, expected: string, tolerance = 0.001): boolean {
   const a = Number(submitted);
   const b = Number(expected);

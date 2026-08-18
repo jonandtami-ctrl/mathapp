@@ -1,6 +1,6 @@
 import type { Grade } from '../../../types';
 import type { Difficulty, EngineQuestion } from '../types';
-import { makeId, randomInt, xpForDifficulty } from '../utils';
+import { alignDecimalStrings, makeId, randomInt, xpForDifficulty } from '../utils';
 
 // Kept intentionally small at every grade: decimal problems test precision
 // (place value, alignment), not big-number arithmetic - a whole-number part
@@ -36,6 +36,7 @@ function generateAddSubtract(grade: Grade, difficulty: Difficulty): EngineQuesti
   const rawAnswer = isAddition ? a + b : a - b;
   const answer = Number(rawAnswer.toFixed(decimalPlaces));
   const operator = isAddition ? '+' : '-';
+  const [topAligned, bottomAligned] = alignDecimalStrings(a, b);
 
   return {
     id: makeId('decimals'),
@@ -45,6 +46,7 @@ function generateAddSubtract(grade: Grade, difficulty: Difficulty): EngineQuesti
     text: `${a} ${operator} ${b} = ?`,
     answer: String(answer),
     inputMode: 'numeric',
+    vertical: { top: topAligned, operator: isAddition ? '+' : '-', bottom: bottomAligned },
     explanation: `${a} ${operator} ${b} = ${answer}`,
     xpValue: xpForDifficulty(difficulty),
   };
@@ -69,6 +71,7 @@ function generateMultiply(grade: Grade, difficulty: Difficulty): EngineQuestion 
     text: `${a} × ${b} = ?`,
     answer: String(answer),
     inputMode: 'numeric',
+    vertical: { top: String(a), operator: '×', bottom: String(b) },
     explanation: `${a} × ${b} = ${answer}`,
     xpValue: xpForDifficulty(difficulty),
   };

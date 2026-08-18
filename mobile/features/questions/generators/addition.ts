@@ -32,6 +32,7 @@ export function generateAddition(grade: Grade, difficulty: Difficulty): EngineQu
     text: `${formatSigned(a)} + ${formatSigned(b)} = ?`,
     answer: String(answer),
     inputMode: 'numeric',
+    vertical: { top: String(a), operator: '+', bottom: String(b) },
     explanation: `${formatSigned(a)} + ${formatSigned(b)} = ${answer}`,
     xpValue: xpForDifficulty(difficulty),
   };

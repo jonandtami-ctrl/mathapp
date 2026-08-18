@@ -46,6 +46,7 @@ export function generateDivision(grade: Grade, difficulty: Difficulty): EngineQu
     text: `${formatSigned(dividend)} ÷ ${formatSigned(divisor)} = ?`,
     answer: String(quotient),
     inputMode: 'numeric',
+    vertical: { top: String(dividend), operator: '÷', bottom: String(divisor) },
     explanation: `${formatSigned(dividend)} ÷ ${formatSigned(divisor)} = ${quotient}`,
     xpValue: xpForDifficulty(difficulty),
   };

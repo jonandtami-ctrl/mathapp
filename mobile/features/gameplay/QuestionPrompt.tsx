@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import VerticalProblem from '../../components/VerticalProblem';
 import { colors, gradients, radii, spacing, typography } from '../../constants/theme';
 import type { EngineQuestion } from '../questions';
 
@@ -29,7 +30,11 @@ export default function QuestionPrompt({
 }: QuestionPromptProps) {
   return (
     <View style={styles.container}>
-      <Text style={styles.questionText}>{question.text}</Text>
+      {question.vertical ? (
+        <VerticalProblem vertical={question.vertical} />
+      ) : (
+        <Text style={styles.questionText}>{question.text}</Text>
+      )}
 
       {question.inputMode === 'numeric' ? (
         <View style={styles.inputRow}>

@@ -436,3 +436,59 @@ describe('curriculum grade-gating (Common Core minimums)', () => {
     expect(decimalDesert.minGrade).toBe(4);
   });
 });
+
+describe('vertical (stacked) layout for simple arithmetic', () => {
+  it('addition/subtraction/multiplication: vertical top/bottom recompute to the answer', () => {
+    for (const category of ['addition', 'subtraction', 'multiplication'] as const) {
+      for (const grade of GRADES) {
+        for (const difficulty of DIFFICULTIES) {
+          const q = generateQuestion(category, grade, difficulty);
+          expect(q.vertical).toBeDefined();
+          const top = parseSignedToken(q.vertical!.top);
+          const bottom = parseSignedToken(q.vertical!.bottom);
+          const expected =
+            category === 'addition' ? top + bottom : category === 'subtraction' ? top - bottom : top * bottom;
+          expect(expected).toBe(Number(q.answer));
+        }
+      }
+    }
+  });
+
+  it('division: vertical top/bottom is dividend/divisor, divisor × answer = top', () => {
+    for (const grade of GRADES) {
+      for (const difficulty of DIFFICULTIES) {
+        const q = generateQuestion('division', grade, difficulty);
+        expect(q.vertical).toBeDefined();
+        const dividend = parseSignedToken(q.vertical!.top);
+        const divisor = parseSignedToken(q.vertical!.bottom);
+        expect(divisor * Number(q.answer)).toBe(dividend);
+      }
+    }
+  });
+
+  it('decimals: vertical top/bottom are decimal-point-aligned (equal decimal places) and recompute to the answer', () => {
+    for (const grade of GRADES) {
+      for (const difficulty of DIFFICULTIES) {
+        const q = generateQuestion('decimals', grade, difficulty);
+        expect(q.vertical).toBeDefined();
+        const { top, bottom, operator } = q.vertical!;
+
+        if (operator === '+' || operator === '-') {
+          const topPlaces = (top.split('.')[1] ?? '').length;
+          const bottomPlaces = (bottom.split('.')[1] ?? '').length;
+          expect(topPlaces).toBe(bottomPlaces);
+        }
+
+        const expected = operator === '+' ? Number(top) + Number(bottom) : operator === '-' ? Number(top) - Number(bottom) : Number(top) * Number(bottom);
+        expect(Math.abs(expected - Number(q.answer))).toBeLessThan(0.01);
+      }
+    }
+  });
+
+  it('categories with more than two terms (order of operations, word problems, fractions, geometry) have no vertical layout', () => {
+    for (const category of ['orderOfOperations', 'wordProblems', 'fractions', 'geometry'] as const) {
+      const q = generateQuestion(category, 5, 2);
+      expect(q.vertical).toBeUndefined();
+    }
+  });
+});
