@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import VerticalProblem from '../../components/VerticalProblem';
+import CoachExplanation from './CoachExplanation';
 import { colors, gradients, radii, spacing, typography } from '../../constants/theme';
 import type { EngineQuestion } from '../questions';
 
@@ -86,7 +87,7 @@ export default function QuestionPrompt({
           {!isCorrect ? (
             <>
               <Text style={styles.feedbackBody}>The correct answer is {question.answer}.</Text>
-              <Text style={styles.feedbackBody}>{question.explanation}</Text>
+              <CoachExplanation explanation={question.explanation} />
             </>
           ) : (
             <Text style={styles.feedbackBody}>
