@@ -56,7 +56,7 @@ export default function QuestionSession({ initialQuestions, allowRetry = true, o
   }
 
   const { answerText, setAnswerText, selectedChoice, answered, isCorrect, feedbackMessage, shakeTranslate, submitNumeric, submitChoice } =
-    useAnswerEvaluation(question, handleResult);
+    useAnswerEvaluation(question, currentStreak, handleResult);
 
   function recordSlotAndAdvance() {
     const current = categoryBreakdownRef.current[question.category] ?? { attempted: 0, correct: 0 };

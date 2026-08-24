@@ -12,9 +12,16 @@ type QuickPlayResultsProps = {
   onHome: () => void;
 };
 
+const SUPERSTAR_MESSAGES = ["You're a math superstar! 🏆", "You're in the groove! 🎶 Keep it up!"];
+const GREAT_MESSAGES = ['Great job out there! 🌟', "You're finding your groove!"];
+
+function pickRandom<T>(items: T[]): T {
+  return items[Math.floor(Math.random() * items.length)];
+}
+
 function tierMessage(accuracy: number): string {
-  if (accuracy >= 0.9) return "You're a math superstar! 🏆";
-  if (accuracy >= 0.7) return 'Great job out there! 🌟';
+  if (accuracy >= 0.9) return pickRandom(SUPERSTAR_MESSAGES);
+  if (accuracy >= 0.7) return pickRandom(GREAT_MESSAGES);
   if (accuracy >= 0.4) return "Nice work — you're getting stronger!";
   return "Keep practicing, you'll get there!";
 }

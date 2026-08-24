@@ -3,6 +3,8 @@ import { Animated, Keyboard } from 'react-native';
 import type { EngineQuestion } from '../questions';
 
 const CORRECT_MESSAGES = ['Great job!', 'Epic answer!', 'Nice thinking!', "You're getting stronger!"];
+const GROOVE_MESSAGES = ["You're in the groove! 🎶", 'On a roll!', 'Keep that momentum going!'];
+const FIRE_MESSAGES = ["You're on fire! 🔥", 'Unstoppable!', 'Math machine!'];
 const RETRY_MESSAGES = ['Almost there!', "Let's try another one!"];
 
 function pickRandom<T>(items: T[]): T {
@@ -13,8 +15,18 @@ function pickRandom<T>(items: T[]): T {
  * Shared answer-evaluation state machine used by Quick Play, Adventure
  * levels, and Boss Battles. Resets automatically whenever `question.id`
  * changes (advancing to the next question, or a "try similar" swap).
+ *
+ * `currentStreak` is the streak count going into this question (before this
+ * answer) - a correct answer here would extend it by one, so we use that
+ * to pick more energetic "in the groove" / "on fire" messages once a kid
+ * is stringing correct answers together, instead of the same flat praise
+ * every time.
  */
-export function useAnswerEvaluation(question: EngineQuestion, onResult: (correct: boolean) => void) {
+export function useAnswerEvaluation(
+  question: EngineQuestion,
+  currentStreak: number,
+  onResult: (correct: boolean) => void,
+) {
   const [answerText, setAnswerText] = useState('');
   const [selectedChoice, setSelectedChoice] = useState<string | null>(null);
   const [answered, setAnswered] = useState(false);
@@ -47,7 +59,14 @@ export function useAnswerEvaluation(question: EngineQuestion, onResult: (correct
     setIsCorrect(correct);
 
     if (correct) {
-      setFeedbackMessage(pickRandom(CORRECT_MESSAGES));
+      const streakAfterThis = currentStreak + 1;
+      if (streakAfterThis >= 5) {
+        setFeedbackMessage(pickRandom(FIRE_MESSAGES));
+      } else if (streakAfterThis >= 3) {
+        setFeedbackMessage(pickRandom(GROOVE_MESSAGES));
+      } else {
+        setFeedbackMessage(pickRandom(CORRECT_MESSAGES));
+      }
     } else {
       setFeedbackMessage(pickRandom(RETRY_MESSAGES));
       triggerShake();

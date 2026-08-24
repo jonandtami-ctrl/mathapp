@@ -49,7 +49,7 @@ export default function BossBattle({ stage, grade, onFinish }: BossBattleProps) 
   }
 
   const { answerText, setAnswerText, selectedChoice, answered, isCorrect, feedbackMessage, submitNumeric, submitChoice } =
-    useAnswerEvaluation(question, handleResult);
+    useAnswerEvaluation(question, hitsLanded, handleResult);
 
   const defeated = hitsLanded >= stage.healthHits;
   const attemptsUsed = attemptIndex + 1;
